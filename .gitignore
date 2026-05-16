@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+.DS_Store
+Thumbs.db
+
+*.log
+*.local
+
+.env
+.env.*
+
+package-lock.json
