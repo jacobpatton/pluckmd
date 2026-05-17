@@ -10,8 +10,8 @@ import { createDom } from "./dom.js";
 
 const DEFAULT_MAX_ITERATIONS = 100;
 const DEFAULT_MAX_ELAPSED_MS = 5 * 60 * 1000;
-const DEFAULT_DUPLICATE_STALE_LIMIT = 2;
-const DEFAULT_UNCHANGED_DOM_LIMIT = 2;
+const DEFAULT_DUPLICATE_STALE_LIMIT = 5;
+const DEFAULT_UNCHANGED_DOM_LIMIT = 5;
 const DEFAULT_WAIT_AFTER_LOAD_MS = 1500;
 
 export interface GenericLinkCollectorOptions {
