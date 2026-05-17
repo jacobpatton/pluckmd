@@ -1,4 +1,4 @@
-import { JSDOM } from "jsdom";
+import { createDom } from "../dom.js";
 
 const MAX_NODES = 1500;
 const TOP_NODES = 1000;
@@ -18,7 +18,7 @@ interface SnapshotNode {
 }
 
 export function buildStructuralDomSnapshot(html: string, url: string): string {
-  const dom = new JSDOM(html, { url });
+  const dom = createDom(html, { url });
   const document = dom.window.document;
 
   for (const selector of ["script", "style", "svg", "noscript", "iframe", "meta", "link"]) {

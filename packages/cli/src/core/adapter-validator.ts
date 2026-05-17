@@ -5,7 +5,7 @@ import type {
   DomEvaluator,
   PageAnalysisInput,
 } from "@harvest/shared";
-import { JSDOM } from "jsdom";
+import { createDom } from "./dom.js";
 
 const LISTING_LINK_THRESHOLD = 3;
 const CONTENT_TEXT_THRESHOLD = 80;
@@ -44,7 +44,7 @@ function createValidationDocument(
   input: PageAnalysisInput,
   issues: AdapterValidationIssue[],
 ): Document {
-  const dom = new JSDOM(input.html, { url: input.finalUrl });
+  const dom = createDom(input.html, { url: input.finalUrl });
   const document = dom.window.document;
 
   for (const selector of spec.listing.excludeSelectors || []) {

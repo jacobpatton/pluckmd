@@ -1,7 +1,7 @@
 import TurndownService from "turndown";
 import { gfm } from "turndown-plugin-gfm";
-import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
+import { createDom } from "../core/dom.js";
 
 function createTurndownService(): TurndownService {
   const service = new TurndownService({
@@ -62,7 +62,7 @@ export function convertHtmlToMarkdown(
   html: string,
   url: string,
 ): ConvertResult {
-  const dom = new JSDOM(html, { url });
+  const dom = createDom(html, { url });
   const document = dom.window.document;
   const turndown = getTurndownService();
 

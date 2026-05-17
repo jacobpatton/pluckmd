@@ -6,7 +6,7 @@ import type {
   LinkCollector,
   PageAnalysisInput,
 } from "@harvest/shared";
-import { JSDOM } from "jsdom";
+import { createDom } from "./dom.js";
 
 const DEFAULT_MAX_ITERATIONS = 100;
 const DEFAULT_MAX_ELAPSED_MS = 5 * 60 * 1000;
@@ -226,7 +226,7 @@ function extractLinksFromHtml(
   baseUrl: string,
   spec: AdapterSpec,
 ): ArticleRef[] {
-  const dom = new JSDOM(html, { url: baseUrl });
+  const dom = createDom(html, { url: baseUrl });
   const document = dom.window.document;
 
   for (const selector of spec.listing.excludeSelectors || []) {
@@ -337,7 +337,7 @@ async function nextUrlFromRendered(
 function nextUrlFromHtml(html: string, baseUrl: string, spec: AdapterSpec): string | null {
   if (spec.pagination.urlTemplate) return nextUrlFromTemplate(spec.pagination.urlTemplate, baseUrl);
 
-  const dom = new JSDOM(html, { url: baseUrl });
+  const dom = createDom(html, { url: baseUrl });
   const document = dom.window.document;
   const relNext = document.querySelector<HTMLAnchorElement>('a[rel="next"]');
   if (relNext?.href) return normalizeUrl(relNext.href, baseUrl)?.href ?? null;

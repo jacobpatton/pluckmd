@@ -9,8 +9,8 @@ import type {
   PaginationCandidate,
   ParsedArticle,
 } from "@harvest/shared";
-import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
+import { createDom } from "./dom.js";
 
 const HIGH_CONFIDENCE_THRESHOLD = 0.7;
 const MIN_LINK_CLUSTER_SIZE = 3;
@@ -32,7 +32,7 @@ const EXCLUDE_SELECTORS = [
 
 export class HeuristicListingAnalyzer implements ListingAnalyzer {
   async analyze(input: PageAnalysisInput): Promise<ListingAnalysisResult> {
-    const dom = new JSDOM(input.html, { url: input.finalUrl });
+    const dom = createDom(input.html, { url: input.finalUrl });
     const document = dom.window.document;
     removeExcludedRegions(document);
 
@@ -67,7 +67,7 @@ export class ReadabilityArticleExtractor implements ArticleExtractor {
     input: ArticleExtractionInput,
     spec: AdapterSpec,
   ): Promise<ParsedArticle> {
-    const dom = new JSDOM(input.html, { url: input.finalUrl || input.url });
+    const dom = createDom(input.html, { url: input.finalUrl || input.url });
     const document = dom.window.document;
 
     const metadata = {

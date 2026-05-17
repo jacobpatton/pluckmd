@@ -3,7 +3,7 @@ import type {
   ArticleRef,
   ParsedArticle,
 } from "@harvest/shared";
-import { JSDOM } from "jsdom";
+import { createDom } from "../../core/dom.js";
 
 const NOTE_HOSTNAME = "note.com";
 const ARTICLE_LINK_SELECTOR = 'a[href*="/n/"]';
@@ -23,7 +23,7 @@ export class NoteAdapter implements SiteAdapter {
   }
 
   collectLinks(html: string, baseUrl: string): ArticleRef[] {
-    const dom = new JSDOM(html, { url: baseUrl });
+    const dom = createDom(html, { url: baseUrl });
     const document = dom.window.document;
 
     const links = document.querySelectorAll<HTMLAnchorElement>(this.linkSelector);
@@ -52,7 +52,7 @@ export class NoteAdapter implements SiteAdapter {
   }
 
   parseArticle(html: string, url: string): ParsedArticle {
-    const dom = new JSDOM(html, { url });
+    const dom = createDom(html, { url });
     const document = dom.window.document;
 
     const title =
