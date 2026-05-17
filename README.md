@@ -18,8 +18,11 @@ npx playwright install chromium
 # Log in (first time only)
 harvest login note
 
-# Download all articles
+# Download all articles from the built-in note adapter
 harvest download https://note.com/username/m/magazine_id -o ./articles
+
+# Inspect generic extraction for an unknown listing page
+harvest inspect https://example.com/blog --no-llm --render=auto
 ```
 
 ## How It Works
@@ -54,7 +57,35 @@ Download all articles from a listing page.
 | `--auth <mode>` | `auto`, `extension`, `profile` | `auto` |
 | `-c, --concurrency <n>` | Parallel downloads | `2` |
 | `--delay <ms>` | Delay between requests | `500` |
-| `--limit <n>` | Max articles to download | unlimited |
+| `--limit <n>` | Max articles to download | `100` |
+| `--pagination-timeout <ms>` | Max time to spend collecting paginated listing links | `300000` |
+| `--no-llm` | Disable LLM fallback for generic extraction | off |
+| `--render <mode>` | `auto`, `never`, `always` for generic extraction | `auto` |
+| `--refresh-adapter` | Bypass cached generic adapter specs | off |
+
+The current download path still uses built-in adapters where available. The
+generic extraction pipeline is exposed through `inspect` first so selector
+resolution can be debugged before it replaces built-in adapters.
+
+### `harvest inspect <url>`
+
+Inspect how harvest resolves a generic adapter for a listing page.
+
+```bash
+harvest inspect https://example.com/blog --explain
+harvest inspect https://example.com/blog --no-llm --render=never
+harvest inspect https://example.com/blog --refresh-adapter
+```
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--explain` | Show cache, heuristic, LLM, and validation details | on |
+| `--no-llm` | Heuristics only; fail if unresolved | off |
+| `--render <mode>` | `auto`, `never`, `always` | `auto` |
+| `--refresh-adapter` | Re-analyze and ignore cached specs | off |
+
+`inspect` reports render source, selected selectors, validation results,
+pagination mode, and a link preview.
 
 ### `harvest login <site>`
 
@@ -69,13 +100,43 @@ Install AI agent skills for building knowledge bases from downloaded articles.
 | `--agent <type>` | `claude-code`, `agents`, `all` | `all` |
 | `--target <dir>` | Directory for AGENTS.md | `.` |
 
-## Supported Sites
+## Generic Extraction
+
+harvest is moving from source-code site adapters toward runtime-generated
+adapter specs. The target is broad support for common blogs, CMS pages,
+newsletters, and article indexes without hardcoded selectors.
+
+This is not a guarantee that every website can be extracted automatically.
+Sites with heavy bot protection, unusual navigation, or inaccessible content may
+still require login, rendering, LLM fallback, or a manually edited cached spec.
+
+Resolution order:
+
+1. Validate and reuse a cached adapter spec when available.
+2. Run deterministic heuristics for repeated article links, content regions, and pagination.
+3. Optionally call an OpenAI-compatible LLM to select or refine candidates.
+4. Mechanically validate the resulting selectors before use or cache.
+
+LLM configuration:
+
+```bash
+export HARVEST_LLM_API_KEY=...
+export HARVEST_LLM_BASE_URL=https://api.openai.com/v1
+export HARVEST_LLM_MODEL=...
+```
+
+Cached adapter specs are stored under the harvest config directory in
+`adapters/*.json`. They are revalidated before use and stale or corrupt entries
+fall back to fresh analysis.
+
+## Built-in Adapters
 
 | Site | Adapter |
 |------|---------|
 | note.com | `note` |
 
-Adding new site adapters is straightforward — PRs welcome.
+Built-in adapters remain for existing behavior until the generic path fully
+replaces them.
 
 ## Architecture
 
@@ -254,7 +315,8 @@ harvest download https://note.com/username/m/magazine_id -o ./articles
 | `--auth <mode>` | `auto`, `extension`, `profile` | `auto` |
 | `-c, --concurrency <n>` | 並列ダウンロード数 | `2` |
 | `--delay <ms>` | リクエスト間隔 | `500` |
-| `--limit <n>` | 最大記事数 | 無制限 |
+| `--limit <n>` | 最大記事数 | `100` |
+| `--pagination-timeout <ms>` | ページネーションされた一覧リンク収集の最大時間 | `300000` |
 
 ### `harvest login <site>`
 

@@ -14,6 +14,7 @@ export interface ScrollOptions {
   loadMoreSelector?: string;
   scrollDelayMs?: number;
   maxStaleAttempts?: number;
+  maxElapsedMs?: number;
 }
 
 export interface Fetcher {

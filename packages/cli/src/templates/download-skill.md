@@ -18,7 +18,7 @@ harvest login <site>   # note, zenn, qiita, hatena, medium
 harvest download <URL> -o <destination> --auth profile
 ```
 
-Flags: `-o` (output dir), `--auth` (auto/extension/profile), `-c` (concurrency), `--delay` (interval in ms), `--limit` (max count)
+Flags: `-o` (output dir), `--auth` (auto/extension/profile), `-c` (concurrency), `--delay` (interval in ms), `--limit` (max count, default 100), `--pagination-timeout` (listing collection timeout in ms, default 300000)
 
 ## Troubleshooting
 - SingletonLock: `rm -f ~/.harvest/chrome-profile/SingletonLock`

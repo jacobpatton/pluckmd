@@ -106,10 +106,17 @@ export class ProfileFetcher implements Fetcher {
   private async scrollUntilStable(page: BrowserPage, options: ScrollOptions): Promise<string> {
     const delayMs = options.scrollDelayMs ?? 2000;
     const maxStale = options.maxStaleAttempts ?? 3;
+    const maxElapsedMs = options.maxElapsedMs ?? 5 * 60 * 1000;
+    const startedAt = Date.now();
     let staleCount = 0;
     let previousCount = 0;
 
     while (staleCount < maxStale) {
+      if (Date.now() - startedAt > maxElapsedMs) {
+        console.log(`   ⏱️  Scroll stopped after ${maxElapsedMs}ms timeout`);
+        break;
+      }
+
       const currentCount = await page.evaluate(
         `document.querySelectorAll('${options.linkSelector}').length`
       ) as number;
@@ -121,9 +128,8 @@ export class ProfileFetcher implements Fetcher {
       }
       previousCount = currentCount;
 
-      // Try clicking "Load More" button if specified
       if (options.loadMoreSelector) {
-        await this.clickLoadMoreIfPresent(page, options.loadMoreSelector);
+        await this.clickExplicitPaginationSelector(page, options.loadMoreSelector);
       }
 
       await page.evaluate("window.scrollTo(0, document.body.scrollHeight)");
@@ -134,7 +140,7 @@ export class ProfileFetcher implements Fetcher {
     return page.content();
   }
 
-  private async clickLoadMoreIfPresent(page: BrowserPage, selector: string): Promise<void> {
+  private async clickExplicitPaginationSelector(page: BrowserPage, selector: string): Promise<void> {
     // note.com uses text-based buttons; try multiple selectors
     const selectors = selector.split(", ");
 
@@ -152,25 +158,8 @@ export class ProfileFetcher implements Fetcher {
       }
     }
 
-    // Fallback: find any button/link with load-more-like text via evaluate
-    const clicked = await page.evaluate(`
-      (() => {
-        const patterns = ['もっと見る', 'もっとみる', 'さらに表示', 'Load more', 'Show more'];
-        const elements = document.querySelectorAll('button, a, div[role="button"]');
-        for (const el of elements) {
-          const text = (el.textContent || '').trim();
-          if (patterns.some(p => text.includes(p))) {
-            el.click();
-            return true;
-          }
-        }
-        return false;
-      })()
-    `) as boolean;
-
-    if (clicked) {
-      await page.waitForTimeout(1500);
-    }
+    // Generic dynamic pagination is handled by GenericLinkCollector. This
+    // legacy path only honors explicit adapter selectors.
   }
 
   async close(): Promise<void> {

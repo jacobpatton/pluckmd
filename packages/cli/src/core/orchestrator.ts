@@ -8,6 +8,7 @@ export interface DownloadOptions {
   concurrency: number;
   delayMs: number;
   limit?: number;
+  paginationTimeoutMs?: number;
   skipExisting?: boolean;
 }
 
@@ -27,6 +28,7 @@ async function collectArticleRefs(
   fetcher: Fetcher,
   adapter: SiteAdapter,
   limit?: number,
+  paginationTimeoutMs?: number,
 ): Promise<ArticleRef[]> {
   console.log(`📡 Fetching listing page: ${listingUrl}`);
 
@@ -38,6 +40,7 @@ async function collectArticleRefs(
       loadMoreSelector: adapter.loadMoreSelector,
       scrollDelayMs: 2000,
       maxStaleAttempts: 3,
+      maxElapsedMs: paginationTimeoutMs,
     });
   } else {
     listingPage = await fetcher.fetch(listingUrl);
@@ -92,6 +95,7 @@ export async function orchestrate(
     fetcher,
     adapter,
     options.limit,
+    options.paginationTimeoutMs,
   );
 
   const concurrencyLimit = pLimit(options.concurrency);

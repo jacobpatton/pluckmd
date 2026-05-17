@@ -12,13 +12,11 @@ const BODY_SELECTOR = ".note-common-styles__textnote-body";
 const AUTHOR_SELECTOR = ".o-noteContentHeader__name, .m-profileName";
 const TAG_SELECTOR = ".m-articleTagList a, .o-noteContentFooter__tag a";
 const HEADING_SELECTOR = "h1, h2, h3, h4";
-const LOAD_MORE_SELECTOR = 'button:has-text("もっとみる"), button:has-text("もっと見る"), a:has-text("もっとみる"), a:has-text("もっと見る")';
 
 export class NoteAdapter implements SiteAdapter {
   readonly id = "note";
   readonly requiresScroll = true;
   readonly linkSelector = ARTICLE_LINK_SELECTOR;
-  readonly loadMoreSelector = LOAD_MORE_SELECTOR;
 
   canHandle(url: URL): boolean {
     return url.hostname === NOTE_HOSTNAME;
