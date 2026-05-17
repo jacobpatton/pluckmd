@@ -14,15 +14,48 @@ export interface FetchRequest {
   };
 }
 
+export interface ActiveTabRequest {
+  id: string;
+  type: "active-tab";
+  version: typeof PROTOCOL_VERSION;
+}
+
 export interface PingRequest {
   id: string;
   type: "ping";
   version: typeof PROTOCOL_VERSION;
 }
 
-export type ProtocolRequest = FetchRequest | PingRequest;
+export interface DomEvalRequest {
+  id: string;
+  type: "dom-eval";
+  version: typeof PROTOCOL_VERSION;
+  operation:
+    | "count"
+    | "text"
+    | "hrefs"
+    | "click"
+    | "clickByText"
+    | "clickPaginationCandidate"
+    | "scrollToBottom"
+    | "content"
+    | "currentUrl";
+  selector?: string;
+  patterns?: readonly string[];
+  articleLinkSelector?: string;
+}
+
+export type ProtocolRequest = FetchRequest | ActiveTabRequest | PingRequest | DomEvalRequest;
 
 export interface FetchResponse {
+  id: string;
+  ok: true;
+  status: number;
+  finalUrl: string;
+  html: string;
+}
+
+export interface ActiveTabResponse {
   id: string;
   ok: true;
   status: number;
@@ -36,6 +69,12 @@ export interface PongResponse {
   pong: true;
 }
 
+export interface DomEvalResponse {
+  id: string;
+  ok: true;
+  value: unknown;
+}
+
 export interface ErrorResponse {
   id: string;
   ok: false;
@@ -45,4 +84,9 @@ export interface ErrorResponse {
   };
 }
 
-export type ProtocolResponse = FetchResponse | PongResponse | ErrorResponse;
+export type ProtocolResponse =
+  | FetchResponse
+  | ActiveTabResponse
+  | PongResponse
+  | DomEvalResponse
+  | ErrorResponse;

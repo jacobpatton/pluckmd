@@ -31,6 +31,17 @@ export interface GenericResolveResult {
   explanation: readonly string[];
 }
 
+export class LlmConfigurationError extends Error {
+  constructor(
+    readonly missing: readonly string[],
+    readonly candidates: ListingHeuristicCandidates,
+    readonly explanation: readonly string[],
+  ) {
+    super(`LLM configuration required. Missing: ${missing.join(", ")}`);
+    this.name = "LlmConfigurationError";
+  }
+}
+
 const emptyCandidates: ListingHeuristicCandidates = {
   articleLinks: [],
   pagination: [],
@@ -96,9 +107,7 @@ export async function resolveGenericAdapterSpec(
   explanation.push("Stage 3: LLM");
   const config = loadLlmConfig();
   if (!config) {
-    throw new Error(
-      `LLM configuration required. Missing: ${getMissingLlmConfig().join(", ")}`,
-    );
+    throw new LlmConfigurationError(getMissingLlmConfig(), candidates, explanation);
   }
 
   const llm = await resolveAdapterSpecWithLlm(input, candidates, config);

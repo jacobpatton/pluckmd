@@ -44,6 +44,10 @@ export {
 export type {
   ProtocolRequest,
   ProtocolResponse,
+  ActiveTabRequest,
+  ActiveTabResponse,
+  DomEvalRequest,
+  DomEvalResponse,
   FetchRequest,
   FetchResponse,
   PingRequest,

@@ -36,14 +36,15 @@ harvest inspect https://example.com/blog --no-llm --render=auto
 │            ┌────────┴────────┐                   │
 │            │                 │                   │
 │     ExtensionFetcher   ProfileFetcher            │
-│     (Chrome Extension) (Playwright)              │
+│     (Chrome tab)       (Playwright)              │
 │            │                 │                   │
-│     Browser cookies    Dedicated profile         │
-│     No re-login        Headless capable          │
+│     Active session     Dedicated profile         │
 └──────────────────────────────────────────────────┘
 ```
 
-By default, tries Extension first and falls back to Profile automatically.
+By default, harvest uses Profile mode through Playwright. Use
+`--auth extension` or `inspect --active-tab` when you want to read from the
+current Chrome session through the extension.
 
 ## Commands
 
@@ -62,6 +63,7 @@ Download all articles from a listing page.
 | `--no-llm` | Disable LLM fallback for generic extraction | off |
 | `--render <mode>` | `auto`, `never`, `always` for generic extraction | `auto` |
 | `--refresh-adapter` | Bypass cached generic adapter specs | off |
+| `--active-tab` | Use the current Chrome tab through the harvest extension as the listing page | off |
 
 The current download path still uses built-in adapters where available. The
 generic extraction pipeline is exposed through `inspect` first so selector
@@ -75,6 +77,7 @@ Inspect how harvest resolves a generic adapter for a listing page.
 harvest inspect https://example.com/blog --explain
 harvest inspect https://example.com/blog --no-llm --render=never
 harvest inspect https://example.com/blog --refresh-adapter
+harvest inspect --active-tab --no-llm
 ```
 
 | Flag | Description | Default |
@@ -83,9 +86,31 @@ harvest inspect https://example.com/blog --refresh-adapter
 | `--no-llm` | Heuristics only; fail if unresolved | off |
 | `--render <mode>` | `auto`, `never`, `always` | `auto` |
 | `--refresh-adapter` | Re-analyze and ignore cached specs | off |
+| `--active-tab` | Inspect the current Chrome tab through the harvest extension | off |
+| `--agent-request [file]` | Write an agent-readable adapter request when LLM config is missing | auto path |
+| `--adapter-spec <file>` | Validate and cache an agent-written AdapterSpec JSON file | off |
 
 `inspect` reports render source, selected selectors, validation results,
 pagination mode, and a link preview.
+
+## Chrome Extension
+
+The extension connects automatically to a CLI-hosted localhost relay while a
+harvest command is running. The CLI never reads Chrome cookies directly, and the
+extension returns rendered HTML only for the requested page or the active tab.
+
+Setup:
+
+1. Open `chrome://extensions`, enable Developer mode, and load
+   `packages/extension` as an unpacked extension.
+2. Run `harvest inspect --active-tab --no-llm` or
+   `harvest download --active-tab`.
+3. If Chrome has suspended the extension service worker, reload the extension in
+   `chrome://extensions` and run the command again.
+
+The relay listens on `127.0.0.1:7432` by default. Set `HARVEST_PORT` before
+running the CLI if that port is unavailable. The popup is only a status/manual
+connect fallback; the normal workflow does not require token entry.
 
 ### `harvest login <site>`
 
@@ -125,6 +150,17 @@ export HARVEST_LLM_BASE_URL=https://api.openai.com/v1
 export HARVEST_LLM_MODEL=...
 ```
 
+Agent-assisted workflow:
+
+When `HARVEST_LLM_*` is not set and heuristics cannot resolve a page, `inspect`
+writes an agent request JSON under `~/.harvest/agent-requests/`. Ask Claude
+Code, Codex, or another coding agent to read that file and produce the
+suggested AdapterSpec JSON. Then validate and cache it:
+
+```bash
+harvest inspect https://example.com/blog --adapter-spec ~/.harvest/agent-requests/example.com__blog.adapter-spec.json
+```
+
 Cached adapter specs are stored under the harvest config directory in
 `adapters/*.json`. They are revalidated before use and stale or corrupt entries
 fall back to fresh analysis.
@@ -145,13 +181,13 @@ harvest/
   packages/
     shared/       # Fetcher interface, protocol types, config
     cli/          # npm package — download, login, setup commands
-    extension/    # Chrome Extension — WebSocket relay bridge
+    extension/    # Chrome Extension — active-tab bridge
   skills/
     claude-code/  # Skills for Claude Code (/harvest-wiki, /harvest-slides)
     agents/       # AGENTS.md for Codex, Cursor, Windsurf, etc.
 ```
 
-### Dual Auth Backend
+### Auth Backends
 
 The `Fetcher` interface abstracts HTML acquisition:
 
@@ -162,9 +198,9 @@ interface Fetcher {
 }
 ```
 
-- **ExtensionFetcher** — Connects to the Chrome Extension via WebSocket. Uses the browser's existing cookies. No re-login needed.
+- **ExtensionFetcher** — Starts a localhost WebSocket relay and waits for the Chrome Extension to connect automatically.
 - **ProfileFetcher** — Launches Playwright with a dedicated persistent profile. Works headless. Best for AI agents and CI.
-- **FallbackFetcher** — Tries Extension first, falls back to Profile.
+- **FallbackFetcher** — Uses Profile mode for the default `auto` path.
 
 ### Site Adapters
 
@@ -294,14 +330,15 @@ harvest download https://note.com/username/m/magazine_id -o ./articles
 │            ┌────────┴────────┐                   │
 │            │                 │                   │
 │     ExtensionFetcher   ProfileFetcher            │
-│    （Chrome拡張機能）  （Playwright）             │
+│    （Chromeタブ）      （Playwright）             │
 │            │                 │                   │
-│     ブラウザのCookie   専用プロファイル           │
-│     再ログイン不要     ヘッドレス対応            │
+│     現在のセッション   専用プロファイル           │
 └──────────────────────────────────────────────────┘
 ```
 
-デフォルトではExtensionを試み、接続できなければProfileに自動フォールバック。
+デフォルトではPlaywrightのProfileモードを使用します。現在のChrome
+セッションを使う場合は `--auth extension` または `inspect --active-tab`
+を指定します。
 
 ## コマンド
 
@@ -321,6 +358,25 @@ harvest download https://note.com/username/m/magazine_id -o ./articles
 ### `harvest login <site>`
 
 ブラウザを開いてログイン、セッションを保存。対応: `note`, `zenn`, `qiita`, `hatena`, `medium`
+
+## Chrome Extension
+
+Extension は CLI 実行中に localhost relay へ自動接続します。CLI が Chrome
+Cookie を直接読むことはなく、Extension は要求されたページまたは active tab
+のHTMLだけを返します。
+
+セットアップ:
+
+1. `chrome://extensions` を開き、Developer mode を有効にして
+   `packages/extension` を unpacked extension として読み込む。
+2. `harvest inspect --active-tab --no-llm` または
+   `harvest download --active-tab` を実行する。
+3. Chrome が Extension service worker を停止している場合は、`chrome://extensions`
+   で harvest Bridge を Reload してから再実行する。
+
+relay はデフォルトで `127.0.0.1:7432` を使います。ポートを変える場合は CLI
+実行前に `HARVEST_PORT` を指定します。popup は状態確認と手動接続用のfallbackで、
+通常フローでは token 入力は不要です。
 
 ### `harvest setup`
 
@@ -346,19 +402,19 @@ harvest/
   packages/
     shared/       # Fetcherインターフェース、プロトコル型、設定
     cli/          # npmパッケージ — download, login, setupコマンド
-    extension/    # Chrome拡張機能 — WebSocketリレー
+    extension/    # Chrome Extension — active-tab bridge
   skills/
     claude-code/  # Claude Code用スキル（/harvest-wiki, /harvest-slides）
     agents/       # Codex, Cursor, Windsurf等向けAGENTS.md
 ```
 
-### デュアル認証バックエンド
+### 認証バックエンド
 
 `Fetcher` インターフェースがHTML取得を抽象化:
 
-- **ExtensionFetcher** — Chrome拡張機能にWebSocket接続。ブラウザのCookieをそのまま使用。再ログイン不要
+- **ExtensionFetcher** — localhost WebSocket relay を起動し、Chrome Extensionの自動接続を待機
 - **ProfileFetcher** — 専用の永続プロファイルでPlaywrightを起動。ヘッドレス動作可能。AIエージェント・CI向け
-- **FallbackFetcher** — Extension→Profileの順に自動フォールバック
+- **FallbackFetcher** — デフォルトの `auto` 経路ではProfileモードを使用
 
 ### サイトアダプター
 

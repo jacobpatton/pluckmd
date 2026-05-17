@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>harvest Bridge</title>
+    <link rel="stylesheet" href="./popup.css">
+  </head>
+  <body>
+    <main>
+      <h1>harvest Bridge</h1>
+      <p id="status">disconnected</p>
+      <label>
+        Port
+        <input id="port" type="number" min="1" max="65535" value="7432">
+      </label>
+      <div class="actions">
+        <button id="connect" type="button">Connect</button>
+        <button id="disconnect" type="button">Disconnect</button>
+      </div>
+      <p id="message"></p>
+    </main>
+    <script src="./popup.js"></script>
+  </body>
+</html>

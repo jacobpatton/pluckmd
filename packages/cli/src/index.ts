@@ -17,7 +17,7 @@ program
   .version("0.1.0");
 
 program
-  .command("download <url>")
+  .command("download [url]")
   .description("Download articles from a blog/magazine URL")
   .option("-o, --output <dir>", "Output directory", "./articles")
   .option(
@@ -36,6 +36,7 @@ program
   .option("--no-llm", "Disable LLM fallback for generic extraction")
   .option("--render <mode>", "Generic extraction render mode: auto, never, always", "auto")
   .option("--refresh-adapter", "Bypass cached generic adapter specs")
+  .option("--active-tab", "Use the current Chrome tab through the harvest extension as the listing page")
   .action(async (url: string, opts: Record<string, string | boolean | undefined>) => {
     await downloadCommand(url, {
       output: opts.output as string,
@@ -47,22 +48,29 @@ program
       noLlm: opts.llm === false,
       render: opts.render as "auto" | "never" | "always",
       refreshAdapter: Boolean(opts.refreshAdapter),
+      activeTab: Boolean(opts.activeTab),
     });
   });
 
 program
-  .command("inspect <url>")
+  .command("inspect [url]")
   .description("Inspect generic adapter resolution for a listing URL")
   .option("--explain", "Show resolution details", true)
   .option("--no-llm", "Disable LLM fallback")
   .option("--render <mode>", "Render mode: auto, never, always", "auto")
   .option("--refresh-adapter", "Bypass cached adapter specs")
+  .option("--active-tab", "Inspect the current Chrome tab through the harvest extension")
+  .option("--agent-request [file]", "Write an agent-readable adapter request when LLM configuration is missing")
+  .option("--adapter-spec <file>", "Validate and cache an agent-written AdapterSpec JSON file")
   .action(async (url: string, opts: Record<string, string | boolean | undefined>) => {
     await inspectCommand(url, {
       explain: Boolean(opts.explain),
       noLlm: opts.llm === false,
       render: opts.render as "auto" | "never" | "always",
       refreshAdapter: Boolean(opts.refreshAdapter),
+      activeTab: Boolean(opts.activeTab),
+      agentRequest: opts.agentRequest,
+      adapterSpec: opts.adapterSpec as string | undefined,
     });
   });
 

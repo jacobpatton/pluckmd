@@ -1,30 +1,21 @@
 import type { Fetcher, FetchedPage, FetchOptions } from "@harvest/shared";
-import { ExtensionFetcher } from "./extension-fetcher.js";
 import { ProfileFetcher } from "./profile-fetcher.js";
 
-type FetcherMode = "extension" | "profile";
+type FetcherMode = "profile";
 
 /**
- * Tries Extension first, falls back to Profile mode.
+ * Uses Profile mode for the default automatic fetch path.
  */
 export class FallbackFetcher implements Fetcher {
   private activeFetcher: Fetcher | null = null;
-  private activeMode: FetcherMode = "extension";
+  private activeMode: FetcherMode = "profile";
 
   async init(): Promise<void> {
-    const extensionFetcher = new ExtensionFetcher();
-    try {
-      await extensionFetcher.connect();
-      this.activeFetcher = extensionFetcher;
-      this.activeMode = "extension";
-      console.log("🔌 Extension mode (browser session)");
-    } catch {
-      console.log("⚙️  Profile mode (Playwright)");
-      const profileFetcher = new ProfileFetcher();
-      await profileFetcher.init();
-      this.activeFetcher = profileFetcher;
-      this.activeMode = "profile";
-    }
+    console.log("⚙️  Profile mode (Playwright)");
+    const profileFetcher = new ProfileFetcher();
+    await profileFetcher.init();
+    this.activeFetcher = profileFetcher;
+    this.activeMode = "profile";
   }
 
   get mode(): FetcherMode {

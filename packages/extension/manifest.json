@@ -2,15 +2,15 @@
   "manifest_version": 3,
   "name": "harvest Bridge",
   "version": "0.1.0",
-  "description": "WebSocket bridge for harvest CLI — fetches pages using your browser session",
-  "permissions": ["activeTab"],
-  "host_permissions": ["<all_urls>"],
+  "description": "Connects the harvest CLI to the current browser tab.",
+  "permissions": ["activeTab", "alarms", "scripting", "storage", "tabs"],
+  "host_permissions": ["<all_urls>", "http://127.0.0.1/*", "http://localhost/*"],
   "background": {
     "service_worker": "src/background.js",
     "type": "module"
   },
-  "icons": {
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+  "action": {
+    "default_title": "harvest Bridge",
+    "default_popup": "src/popup.html"
   }
 }
