@@ -1,5 +1,5 @@
 ---
-description: "Batch download blog articles with harvest CLI. Supports authenticated content on note.com and more."
+description: "Batch download blog articles with harvest CLI using generic runtime extraction."
 ---
 
 # harvest download — Batch Article Download
@@ -24,23 +24,20 @@ Batch save blog/magazine articles as Markdown files using the harvest CLI.
 A browser will open for manual login. Close the browser when done.
 
 ```bash
-harvest login <site>
+harvest login <login-url>
 ```
-
-Supported sites: `note`, `zenn`, `qiita`, `hatena`, `medium`
 
 Sessions are saved in `~/.harvest/chrome-profile/` and not required again.
 
 ### Step 3: Run the download
 
 ```bash
-harvest download <URL> -o <destination> --auth profile
+harvest download <URL> -o <destination>
 ```
 
 | Flag | Description | Default |
 |--------|------|-----------|
 | `-o, --output <dir>` | Output directory | `./articles` |
-| `--auth <mode>` | `auto` / `extension` / `profile` | `auto` |
 | `-c, --concurrency <n>` | Concurrency | `2` |
 | `--delay <ms>` | Request interval | `500` |
 | `--limit <n>` | Max articles | Unlimited |
@@ -56,17 +53,10 @@ head -10 <destination>/*.md
 
 ## Common Patterns
 
-### All articles from a note.com magazine
+### Listing page
 
 ```bash
-harvest login note
-harvest download https://note.com/username/m/magazine_id -o ./articles
-```
-
-### All articles from a note.com user
-
-```bash
-harvest download https://note.com/username -o ./articles --auth profile
+harvest download <URL> -o ./articles
 ```
 
 ### Test with a limited number of articles
@@ -93,8 +83,9 @@ npm install playwright && npx playwright install chromium
 
 ### Only some articles are fetched
 
-For sites with infinite scroll or "Load more" buttons, use `--auth profile`:
+For sites with infinite scroll or "Load more" buttons, open the page in Chrome
+with the harvest extension installed and use:
 
 ```bash
-harvest download <URL> --auth profile -o ./articles
+harvest download --active-tab -o ./articles
 ```

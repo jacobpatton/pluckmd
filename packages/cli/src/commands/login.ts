@@ -1,22 +1,12 @@
 import { getProfileDir } from "@harvest/shared";
 import { mkdir } from "node:fs/promises";
 
-const LOGIN_URLS: Record<string, string> = {
-  note: "https://note.com/login",
-  zenn: "https://zenn.dev/enter",
-  qiita: "https://qiita.com/login",
-  hatena: "https://www.hatena.ne.jp/login",
-  medium: "https://medium.com/m/signin",
-};
-
-function getSupportedSites(): string {
-  return Object.keys(LOGIN_URLS).join(", ");
-}
-
-export async function loginCommand(site: string): Promise<void> {
-  const loginUrl = LOGIN_URLS[site];
-  if (!loginUrl) {
-    console.error(`Unknown site: ${site}. Supported: ${getSupportedSites()}`);
+export async function loginCommand(url: string): Promise<void> {
+  let loginUrl: string;
+  try {
+    loginUrl = new URL(url).href;
+  } catch {
+    console.error("Login target must be a full URL, for example: harvest login https://example.com/login");
     process.exitCode = 1;
     return;
   }
@@ -35,7 +25,7 @@ export async function loginCommand(site: string): Promise<void> {
   const profileDir = getProfileDir();
   await mkdir(profileDir, { recursive: true });
 
-  console.log(`🔑 Opening ${site} login page...`);
+  console.log(`🔑 Opening login page: ${loginUrl}`);
   console.log(`   Profile: ${profileDir}`);
   console.log("   Log in manually, then close the browser.\n");
 

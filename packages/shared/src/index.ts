@@ -1,6 +1,5 @@
-export type { Fetcher, FetchedPage, FetchOptions, ScrollOptions } from "./fetcher.js";
+export type { Fetcher, FetchedPage, FetchOptions } from "./fetcher.js";
 export type {
-  SiteAdapter,
   ArticleRef,
   ArticleMetadata,
   ParsedArticle,

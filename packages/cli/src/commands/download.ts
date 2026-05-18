@@ -1,11 +1,6 @@
-import type { Fetcher } from "@harvest/shared";
 import type { PageAnalysisInput } from "@harvest/shared";
 import type { RenderMode } from "@harvest/shared";
-import { FallbackFetcher } from "../core/fallback-fetcher.js";
-import { ProfileFetcher } from "../core/profile-fetcher.js";
 import { ExtensionFetcher } from "../core/extension-fetcher.js";
-import { resolveAdapter } from "../core/adapter-registry.js";
-import { orchestrate } from "../core/orchestrator.js";
 import { resolveGenericAdapterSpec } from "../core/generic-resolver.js";
 import { GenericLinkCollector } from "../core/link-collector.js";
 import { RenderingPageAcquirer } from "../core/page-acquirer.js";
@@ -14,11 +9,8 @@ import { convertHtmlToMarkdown } from "../pipeline/converter.js";
 import { writeArticle } from "../pipeline/writer.js";
 import pLimit from "p-limit";
 
-export type AuthMode = "auto" | "extension" | "profile";
-
 export interface DownloadCommandOptions {
   output: string;
-  auth: AuthMode;
   concurrency: number;
   delay: number;
   limit: number;
@@ -27,28 +19,6 @@ export interface DownloadCommandOptions {
   render?: RenderMode;
   refreshAdapter?: boolean;
   activeTab?: boolean;
-}
-
-async function createFetcher(authMode: AuthMode): Promise<Fetcher> {
-  switch (authMode) {
-    case "extension": {
-      const extensionFetcher = new ExtensionFetcher();
-      await extensionFetcher.connect();
-      console.log("🔌 Extension mode (active browser session)");
-      return extensionFetcher;
-    }
-    case "profile": {
-      const profileFetcher = new ProfileFetcher();
-      await profileFetcher.init();
-      console.log("⚙️  Profile mode (Playwright)");
-      return profileFetcher;
-    }
-    case "auto": {
-      const fallbackFetcher = new FallbackFetcher();
-      await fallbackFetcher.init();
-      return fallbackFetcher;
-    }
-  }
 }
 
 function reportResult(result: { succeeded: number; failed: number; errors: Array<{ url: string; error: string }> }): void {
@@ -74,30 +44,8 @@ export async function downloadCommand(
   }
   if (!url) throw new Error("URL is required unless --active-tab is set");
 
-  let adapter;
-  try {
-    adapter = resolveAdapter(url);
-  } catch (error) {
-    if (!isMissingAdapterError(error)) throw error;
-    const result = await genericDownload(url, options);
-    reportResult(result);
-    return;
-  }
-
-  const fetcher = await createFetcher(options.auth);
-  try {
-    console.log(`🔍 Adapter: ${adapter.id}\n`);
-    const result = await orchestrate(url, fetcher, adapter, {
-      outputDir: options.output,
-      concurrency: options.concurrency,
-      delayMs: options.delay,
-      limit: options.limit,
-      paginationTimeoutMs: options.paginationTimeoutMs,
-    });
-    reportResult(result);
-  } finally {
-    await fetcher.close();
-  }
+  const result = await genericDownload(url, options);
+  reportResult(result);
 }
 
 async function genericDownloadFromActiveTab(
@@ -197,10 +145,6 @@ async function genericDownloadWithListing(
 
   await Promise.all(tasks);
   return result;
-}
-
-function isMissingAdapterError(error: unknown): boolean {
-  return error instanceof Error && error.message.startsWith("No adapter found");
 }
 
 function sleep(milliseconds: number): Promise<void> {

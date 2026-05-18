@@ -260,25 +260,82 @@ function clickByText(patterns) {
 }
 
 function clickPaginationCandidate(articleLinkSelector) {
-  const articleLinks = Array.from(document.querySelectorAll(articleLinkSelector))
-    .filter((element) => element instanceof HTMLElement)
-    .filter((element) => Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length));
+  const before = paginationSignature(articleLinkSelector);
+  const candidates = paginationCandidates(articleLinkSelector);
+  return tryCandidate(0);
+
+  function tryCandidate(index) {
+    const candidate = candidates[index];
+    if (!candidate) return Promise.resolve(false);
+    candidate.element.scrollIntoView({ block: "center", inline: "center" });
+    candidate.element.click();
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const after = paginationSignature(articleLinkSelector);
+        if (advancedPagination(before, after)) {
+          resolve(true);
+          return;
+        }
+        resolve(tryCandidate(index + 1));
+      }, 900);
+    });
+  }
+}
+
+function paginationCandidates(articleLinkSelector) {
+  const articleLinks = visibleElements(articleLinkSelector);
   const articleRects = articleLinks.map((element) => element.getBoundingClientRect());
   const lastArticleBottom = articleRects.reduce((max, rect) => Math.max(max, rect.bottom), 0);
   const articleLinkSet = new Set(articleLinks);
-  const controls = Array.from(document.querySelectorAll("button, a, [role='button'], input[type='button'], input[type='submit']"))
+
+  return Array.from(document.querySelectorAll("button, a, [role='button'], input[type='button'], input[type='submit']"))
     .filter((element) => element instanceof HTMLElement)
     .filter((element) => !articleLinkSet.has(element))
-    .filter((element) => Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length))
+    .filter((element) => isVisible(element))
     .filter((element) => !element.hasAttribute("disabled") && element.getAttribute("aria-disabled") !== "true")
-    .map((element) => ({ element, rect: element.getBoundingClientRect(), text: element.textContent?.trim().toLowerCase() || "" }))
-    .filter((entry) => entry.rect.top >= Math.max(0, lastArticleBottom - 80));
+    .filter((element) => !element.closest("nav, header, footer, aside"))
+    .filter((element) => !element.closest(articleLinkSelector))
+    .map((element) => {
+      const rect = element.getBoundingClientRect();
+      const area = rect.width * rect.height;
+      const belowArticles = lastArticleBottom === 0 || rect.top >= lastArticleBottom - 120;
+      const centered = 1 - Math.min(Math.abs((rect.left + rect.width / 2) - window.innerWidth / 2) / window.innerWidth, 1);
+      const sizeScore = Math.min(area / 8000, 1);
+      const distance = lastArticleBottom === 0 ? 0 : Math.abs(rect.top - lastArticleBottom);
+      const proximity = 1 - Math.min(distance / Math.max(window.innerHeight, 1), 1);
+      return { element, score: (belowArticles ? 4 : 0) + centered + sizeScore + proximity };
+    })
+    .filter((candidate) => candidate.score >= 3.5)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+}
 
-  const preferred = controls.find((entry) =>
-    ["more", "next", "load", "show", "older", "さらに", "もっと", "次"].some((pattern) => entry.text.includes(pattern)),
-  ) || controls[0];
-  if (!preferred) return false;
-  preferred.element.scrollIntoView({ block: "center", inline: "center" });
-  preferred.element.click();
-  return true;
+function paginationSignature(articleLinkSelector) {
+  return {
+    hrefs: visibleElements(articleLinkSelector)
+      .map((element) => element instanceof HTMLAnchorElement ? element.href : element.getAttribute("href") || "")
+      .filter(Boolean),
+    height: document.documentElement.scrollHeight,
+    url: window.location.href,
+  };
+}
+
+function advancedPagination(before, after) {
+  const beforeSet = new Set(before.hrefs);
+  const newHrefCount = after.hrefs.filter((href) => !beforeSet.has(href)).length;
+  return newHrefCount > 0 || after.hrefs.length > before.hrefs.length || after.height > before.height + 200 || after.url !== before.url;
+}
+
+function visibleElements(selector) {
+  try {
+    return Array.from(document.querySelectorAll(selector))
+      .filter((element) => element instanceof HTMLElement)
+      .filter(isVisible);
+  } catch {
+    return [];
+  }
+}
+
+function isVisible(element) {
+  return Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
 }

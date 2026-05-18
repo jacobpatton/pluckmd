@@ -217,10 +217,7 @@ export interface ArticleExtractor {
 }
 
 /**
- * High-level composition boundary for the future generic path.
- *
- * The existing SiteAdapter flow can continue to run until each boundary has a
- * production implementation and can replace source-code site adapters safely.
+ * High-level composition boundary for the generic extraction path.
  */
 export interface GenericExtractionPipeline {
   readonly pageAcquirer: PageAcquirer;

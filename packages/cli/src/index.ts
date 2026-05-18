@@ -2,7 +2,6 @@
 
 import { Command } from "commander";
 import { downloadCommand } from "./commands/download.js";
-import type { AuthMode } from "./commands/download.js";
 import { inspectCommand } from "./commands/inspect.js";
 import { loginCommand } from "./commands/login.js";
 import { setupCommand } from "./commands/setup.js";
@@ -20,11 +19,6 @@ program
   .command("download [url]")
   .description("Download articles from a blog/magazine URL")
   .option("-o, --output <dir>", "Output directory", "./articles")
-  .option(
-    "--auth <mode>",
-    "Auth mode: auto, extension, profile",
-    "auto",
-  )
   .option("-c, --concurrency <n>", "Parallel downloads", "2")
   .option("--delay <ms>", "Delay between requests (ms)", "500")
   .option("--limit <n>", "Max articles to download", String(DEFAULT_DOWNLOAD_LIMIT))
@@ -40,7 +34,6 @@ program
   .action(async (url: string, opts: Record<string, string | boolean | undefined>) => {
     await downloadCommand(url, {
       output: opts.output as string,
-      auth: opts.auth as AuthMode,
       concurrency: Number(opts.concurrency),
       delay: Number(opts.delay),
       limit: Number(opts.limit),
@@ -75,10 +68,10 @@ program
   });
 
 program
-  .command("login <site>")
-  .description("Log in to a site (note, zenn, qiita, hatena, medium)")
-  .action(async (site: string) => {
-    await loginCommand(site);
+  .command("login <url>")
+  .description("Open any login URL in the persistent harvest browser profile")
+  .action(async (url: string) => {
+    await loginCommand(url);
   });
 
 program

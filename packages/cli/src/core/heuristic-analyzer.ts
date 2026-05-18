@@ -211,18 +211,6 @@ function findPaginationCandidates(
     });
   }
 
-  const nextByAria = Array.from(
-    document.querySelectorAll<HTMLAnchorElement>('a[aria-label*="next" i], a[aria-label*="次" i]'),
-  );
-  for (const link of nextByAria.slice(0, 3)) {
-    candidates.push({
-      method: "next-url",
-      score: 0.85,
-      selector: selectorForElement(link),
-      evidence: `Found next link by aria-label: ${link.getAttribute("aria-label") || ""}`,
-    });
-  }
-
   if (articleLink && hasStructuralPaginationControl(document, articleLink)) {
     candidates.push({
       method: "auto",

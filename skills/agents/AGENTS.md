@@ -23,11 +23,9 @@ npx playwright install chromium
 
 ### Commands
 
-#### `harvest login <site>`
+#### `harvest login <login-url>`
 
 Open browser for manual login. Session is saved for future use.
-
-Supported sites: `note`, `zenn`, `qiita`, `hatena`, `medium`
 
 #### `harvest download <url> [options]`
 
@@ -36,7 +34,6 @@ Download all articles from a listing page.
 | Flag | Description | Default |
 |------|-------------|---------|
 | `-o, --output <dir>` | Output directory | `./articles` |
-| `--auth <mode>` | `auto`, `extension`, `profile` | `auto` |
 | `-c, --concurrency <n>` | Parallel downloads | `2` |
 | `--delay <ms>` | Delay between requests | `500` |
 | `--limit <n>` | Max articles | unlimited |
@@ -45,24 +42,24 @@ Download all articles from a listing page.
 
 Magazine (all articles):
 ```bash
-harvest download https://note.com/username/m/magazine_id -o ./raw --auth profile
+harvest download <url> -o ./raw
 ```
 
 User profile (all articles):
 ```bash
-harvest download https://note.com/username -o ./raw --auth profile
+harvest download <url> -o ./raw
 ```
 
 Test with limit:
 ```bash
-harvest download <url> --limit 5 -o /tmp/test --auth profile
+harvest download <url> --limit 5 -o /tmp/test
 ```
 
 ### Troubleshooting
 
 - **SingletonLock error**: `rm -f ~/.harvest/chrome-profile/SingletonLock`
 - **Playwright not installed**: `npm install playwright && npx playwright install chromium`
-- **Partial results**: Use `--auth profile` for sites with infinite scroll or "load more" buttons
+- **Partial results**: Use `--active-tab` with the page open in Chrome, increase `--limit`, or increase `--pagination-timeout`
 
 ---
 
@@ -253,7 +250,7 @@ These skills work with articles downloaded by `harvest download`:
 
 ```bash
 # Step 1: Download articles
-harvest download https://note.com/author/m/magazine_id -o ./project/raw
+harvest download <url> -o ./project/raw
 
 # Step 2: Initialize wiki
 # (run wiki init skill)

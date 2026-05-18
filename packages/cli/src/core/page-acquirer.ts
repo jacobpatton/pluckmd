@@ -224,68 +224,11 @@ class PlaywrightDomEvaluator implements DomEvaluator {
   }
 
   async clickPaginationCandidate(articleLinkSelector: string): Promise<DomEvaluationResult<boolean>> {
-    const marker = `harvest-pagination-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const marked = await this.page.evaluate<boolean>(
-      (arg: unknown) => {
-        const { articleLinkSelector, marker } = arg as {
-          articleLinkSelector: string;
-          marker: string;
-        };
-        const articleLinks = Array.from(document.querySelectorAll(articleLinkSelector))
-          .filter((element): element is HTMLElement => element instanceof HTMLElement)
-          .filter((element) => Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length));
-        const articleRects = articleLinks.map((element) => element.getBoundingClientRect());
-        const lastArticleBottom = articleRects.reduce((max, rect) => Math.max(max, rect.bottom), 0);
-        const articleLinkSet = new Set(articleLinks);
-        const controls = Array.from(document.querySelectorAll("button, a, [role='button'], input[type='button'], input[type='submit']"))
-          .filter((element): element is HTMLElement => element instanceof HTMLElement)
-          .filter((element) => Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length))
-          .filter((element) => !element.hasAttribute("disabled") && element.getAttribute("aria-disabled") !== "true")
-          .filter((element) => !element.closest("nav, header, footer, aside"))
-          .filter((element) => !element.closest(articleLinkSelector))
-          .filter((element) => !articleLinkSet.has(element));
-
-        const scored = controls
-          .map((element) => {
-            const rect = element.getBoundingClientRect();
-            const area = rect.width * rect.height;
-            const belowArticles = lastArticleBottom === 0 || rect.top >= lastArticleBottom - 80;
-            const centered = 1 - Math.min(Math.abs((rect.left + rect.width / 2) - window.innerWidth / 2) / window.innerWidth, 1);
-            const sizeScore = Math.min(area / 8000, 1);
-            const verticalScore = belowArticles ? 1 : 0;
-            return {
-              element,
-              score: verticalScore * 4 + centered + sizeScore,
-            };
-          })
-          .filter((candidate) => candidate.score >= 4)
-          .sort((a, b) => b.score - a.score);
-
-        const target = scored[0]?.element;
-        if (!target) return false;
-        target.setAttribute("data-harvest-pagination-target", marker);
-        target.scrollIntoView({ block: "center", inline: "center" });
-        return true;
-      },
-      { articleLinkSelector, marker },
+    const value = await this.page.evaluate<boolean>(
+      async (selector: unknown) => clickPaginationCandidateByExperiment(selector as string),
+      articleLinkSelector,
     );
-    if (!marked) return { value: false };
-
-    try {
-      await this.page.click(`[data-harvest-pagination-target="${marker}"]`, { timeout: 5000 });
-      return { value: true };
-    } catch {
-      return { value: false };
-    } finally {
-      await this.page.evaluate(
-        (currentMarker: unknown) => {
-          document
-            .querySelector(`[data-harvest-pagination-target="${currentMarker as string}"]`)
-            ?.removeAttribute("data-harvest-pagination-target");
-        },
-        marker,
-      );
-    }
+    return { value };
   }
 
   async scrollToBottom(): Promise<DomEvaluationResult<boolean>> {
@@ -326,6 +269,84 @@ export function shouldRetryWithRendering(html: string): boolean {
   const textLength = stripTags(lowerHtml).replace(/\s+/g, "").length;
 
   return scriptCount >= 8 && (linkCount < 5 || textLength < 800);
+}
+
+function clickPaginationCandidateByExperiment(articleLinkSelector: string): Promise<boolean> {
+  const before = paginationSignature(articleLinkSelector);
+  const candidates = paginationCandidates(articleLinkSelector);
+  return tryCandidate(0);
+
+  async function tryCandidate(index: number): Promise<boolean> {
+    const candidate = candidates[index];
+    if (!candidate) return false;
+    candidate.element.scrollIntoView({ block: "center", inline: "center" });
+    candidate.element.click();
+    await new Promise((resolve) => setTimeout(resolve, 900));
+    const after = paginationSignature(articleLinkSelector);
+    if (advancedPagination(before, after)) return true;
+    return tryCandidate(index + 1);
+  }
+}
+
+function paginationCandidates(articleLinkSelector: string): Array<{ element: HTMLElement; score: number }> {
+  const articleLinks = visibleElements(articleLinkSelector);
+  const articleRects = articleLinks.map((element) => element.getBoundingClientRect());
+  const lastArticleBottom = articleRects.reduce((max, rect) => Math.max(max, rect.bottom), 0);
+  const articleLinkSet = new Set(articleLinks);
+
+  return Array.from(document.querySelectorAll("button, a, [role='button'], input[type='button'], input[type='submit']"))
+    .filter((element): element is HTMLElement => element instanceof HTMLElement)
+    .filter((element) => !articleLinkSet.has(element))
+    .filter((element) => isVisible(element))
+    .filter((element) => !element.hasAttribute("disabled") && element.getAttribute("aria-disabled") !== "true")
+    .filter((element) => !element.closest("nav, header, footer, aside"))
+    .filter((element) => !element.closest(articleLinkSelector))
+    .map((element) => {
+      const rect = element.getBoundingClientRect();
+      const area = rect.width * rect.height;
+      const belowArticles = lastArticleBottom === 0 || rect.top >= lastArticleBottom - 120;
+      const centered = 1 - Math.min(Math.abs((rect.left + rect.width / 2) - window.innerWidth / 2) / window.innerWidth, 1);
+      const sizeScore = Math.min(area / 8000, 1);
+      const distance = lastArticleBottom === 0 ? 0 : Math.abs(rect.top - lastArticleBottom);
+      const proximity = 1 - Math.min(distance / Math.max(window.innerHeight, 1), 1);
+      return { element, score: (belowArticles ? 4 : 0) + centered + sizeScore + proximity };
+    })
+    .filter((candidate) => candidate.score >= 3.5)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+}
+
+function paginationSignature(articleLinkSelector: string): { hrefs: string[]; height: number; url: string } {
+  return {
+    hrefs: visibleElements(articleLinkSelector)
+      .map((element) => element instanceof HTMLAnchorElement ? element.href : element.getAttribute("href") || "")
+      .filter(Boolean),
+    height: document.documentElement.scrollHeight,
+    url: window.location.href,
+  };
+}
+
+function advancedPagination(
+  before: { hrefs: string[]; height: number; url: string },
+  after: { hrefs: string[]; height: number; url: string },
+): boolean {
+  const beforeSet = new Set(before.hrefs);
+  const newHrefCount = after.hrefs.filter((href) => !beforeSet.has(href)).length;
+  return newHrefCount > 0 || after.hrefs.length > before.hrefs.length || after.height > before.height + 200 || after.url !== before.url;
+}
+
+function visibleElements(selector: string): HTMLElement[] {
+  try {
+    return Array.from(document.querySelectorAll(selector))
+      .filter((element): element is HTMLElement => element instanceof HTMLElement)
+      .filter(isVisible);
+  } catch {
+    return [];
+  }
+}
+
+function isVisible(element: HTMLElement): boolean {
+  return Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
 }
 
 function countMatches(text: string, pattern: RegExp): number {
