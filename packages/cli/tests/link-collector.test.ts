@@ -379,4 +379,86 @@ describe("GenericLinkCollector", () => {
     expect(result.stoppedBecause).toBe("max-iterations");
     expect(result.iterations).toBe(2);
   });
+
+  it("navigates rendered next-url pagination when the evaluator supports navigation", async () => {
+    let currentUrl = "https://example.com/blog";
+    const hrefsByUrl = new Map([
+      [
+        "https://example.com/blog",
+        [
+          "https://example.com/posts/one",
+          "https://example.com/posts/two",
+        ],
+      ],
+      [
+        "https://example.com/blog/page/2",
+        [
+          "https://example.com/posts/three",
+          "https://example.com/posts/four",
+        ],
+      ],
+    ]);
+    const evaluator: DomEvaluator = {
+      async count() {
+        return { value: 1 };
+      },
+      async text() {
+        return { value: [] };
+      },
+      async hrefs(selector) {
+        if (selector === 'a[rel="next"]') {
+          return {
+            value: currentUrl === "https://example.com/blog"
+              ? ["https://example.com/blog/page/2"]
+              : [],
+          };
+        }
+        return { value: hrefsByUrl.get(currentUrl) ?? [] };
+      },
+      async click() {
+        return { value: false };
+      },
+      async clickByText() {
+        return { value: false };
+      },
+      async scrollToBottom() {
+        return { value: true };
+      },
+      async navigate(url) {
+        currentUrl = url;
+        return { value: true };
+      },
+      async content() {
+        return { value: `<main data-url="${currentUrl}"></main>` };
+      },
+      async currentUrl() {
+        return { value: currentUrl };
+      },
+      async wait() {},
+    };
+
+    const result = await new GenericLinkCollector().collectLinks(
+      {
+        ...input("<main></main>"),
+        source: "rendered",
+        renderMode: "always",
+        evaluator,
+      },
+      {
+        ...baseSpec,
+        pagination: {
+          method: "next-url",
+          selector: 'a[rel="next"]',
+        },
+      },
+    );
+
+    expect(result.stoppedBecause).toBe("complete");
+    expect(result.links.map((link) => link.url)).toEqual([
+      "https://example.com/posts/one",
+      "https://example.com/posts/two",
+      "https://example.com/posts/three",
+      "https://example.com/posts/four",
+    ]);
+  });
 });

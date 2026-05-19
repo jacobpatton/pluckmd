@@ -38,9 +38,11 @@ export interface DomEvalRequest {
     | "clickByText"
     | "clickPaginationCandidate"
     | "scrollToBottom"
+    | "navigate"
     | "content"
     | "currentUrl";
   selector?: string;
+  url?: string;
   patterns?: readonly string[];
   articleLinkSelector?: string;
 }

@@ -94,6 +94,7 @@ export interface DomEvaluator {
   clickByText(patterns: readonly string[]): Promise<DomEvaluationResult<boolean>>;
   clickPaginationCandidate?(articleLinkSelector: string): Promise<DomEvaluationResult<boolean>>;
   scrollToBottom(): Promise<DomEvaluationResult<boolean>>;
+  navigate?(url: string): Promise<DomEvaluationResult<boolean>>;
   content(): Promise<DomEvaluationResult<string>>;
   currentUrl(): Promise<DomEvaluationResult<string>>;
   wait(milliseconds: number): Promise<void>;

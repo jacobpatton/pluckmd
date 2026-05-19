@@ -1,5 +1,18 @@
-import type { PageAnalysisInput } from "@harvest/shared";
-import type { RenderMode } from "@harvest/shared";
+import type {
+  AdapterSpec,
+  ArticleRef,
+  PageAnalysisInput,
+  RenderMode,
+} from "@harvest/shared";
+import {
+  ConsoleDownloadReporter,
+  type DownloadReporter,
+} from "./download-reporter.js";
+import {
+  type ArticleDownloadOutcome,
+  type DownloadResult,
+  summarizeDownload,
+} from "./download-result.js";
 import { ExtensionFetcher } from "../core/extension-fetcher.js";
 import { resolveGenericAdapterSpec } from "../core/generic-resolver.js";
 import { GenericLinkCollector } from "../core/link-collector.js";
@@ -21,92 +34,73 @@ export interface DownloadCommandOptions {
   activeTab?: boolean;
 }
 
-function reportResult(result: { succeeded: number; failed: number; errors: Array<{ url: string; error: string }> }): void {
-  console.log(`\n📊 Result: ${result.succeeded} saved, ${result.failed} failed`);
+type ArticleAcquirer = (url: string) => Promise<PageAnalysisInput>;
 
-  if (result.errors.length > 0) {
-    console.log("\nFailed articles:");
-    for (const entry of result.errors) {
-      console.log(`  - ${entry.url}: ${entry.error}`);
-    }
-    process.exitCode = 1;
-  }
+interface DownloadSource {
+  readonly label: string;
+  readonly listingDescription?: string;
+  acquireListing(): Promise<PageAnalysisInput>;
+  acquireArticle: ArticleAcquirer;
+  close(): Promise<void>;
 }
 
 export async function downloadCommand(
   url: string | undefined,
   options: DownloadCommandOptions,
 ): Promise<void> {
-  if (options.activeTab) {
-    const result = await genericDownloadFromActiveTab(options);
-    reportResult(result);
-    return;
+  const source = createDownloadSource(url, options);
+  const reporter = new ConsoleDownloadReporter();
+
+  try {
+    const result = await runGenericDownload(source, options, reporter);
+    reporter.finished(result);
+  } finally {
+    await source.close();
   }
+}
+
+function createDownloadSource(
+  url: string | undefined,
+  options: DownloadCommandOptions,
+): DownloadSource {
+  if (options.activeTab) {
+    const extensionFetcher = new ExtensionFetcher();
+    return {
+      label: "generic active tab",
+      listingDescription: "Active tab",
+      acquireListing: () => extensionFetcher.acquireActiveTab(),
+      acquireArticle: (articleUrl) => acquireArticleThroughExtension(extensionFetcher, articleUrl),
+      close: () => extensionFetcher.close(),
+    };
+  }
+
   if (!url) throw new Error("URL is required unless --active-tab is set");
 
-  const result = await genericDownload(url, options);
-  reportResult(result);
-}
-
-async function genericDownloadFromActiveTab(
-  options: DownloadCommandOptions,
-): Promise<{ succeeded: number; failed: number; errors: Array<{ url: string; error: string }> }> {
-  const extensionFetcher = new ExtensionFetcher();
-  try {
-    console.log("🔍 Adapter: generic active tab\n");
-    const listing = await extensionFetcher.acquireActiveTab();
-    console.log(`   Active tab: ${listing.finalUrl}`);
-    return await genericDownloadWithListing(listing.finalUrl, options, listing, async (articleUrl) => {
-      const page = await extensionFetcher.fetch(articleUrl);
-      return {
-        requestedUrl: articleUrl,
-        finalUrl: page.finalUrl,
-        status: page.status,
-        html: page.html,
-        source: "rendered",
-        renderMode: "always",
-      };
-    });
-  } finally {
-    await extensionFetcher.close();
-  }
-}
-
-async function genericDownload(
-  url: string,
-  options: DownloadCommandOptions,
-): Promise<{ succeeded: number; failed: number; errors: Array<{ url: string; error: string }> }> {
   const acquirer = new RenderingPageAcquirer({ render: options.render ?? "auto" });
-  try {
-    console.log("🔍 Adapter: generic\n");
-    const listing = await acquirer.acquire(url);
-    return await genericDownloadWithListing(url, options, listing, (articleUrl) => acquirer.acquire(articleUrl));
-  } finally {
-    await acquirer.close();
-  }
+  return {
+    label: "generic",
+    acquireListing: () => acquirer.acquire(url),
+    acquireArticle: (articleUrl) => acquirer.acquire(articleUrl),
+    close: () => acquirer.close(),
+  };
 }
 
-async function genericDownloadWithListing(
-  url: string,
+async function runGenericDownload(
+  source: DownloadSource,
   options: DownloadCommandOptions,
-  listing: PageAnalysisInput,
-  acquireArticle: (url: string) => Promise<PageAnalysisInput>,
-): Promise<{ succeeded: number; failed: number; errors: Array<{ url: string; error: string }> }> {
+  reporter: DownloadReporter,
+): Promise<DownloadResult> {
   const extractor = new ReadabilityArticleExtractor();
   const concurrencyLimit = pLimit(options.concurrency);
-  const result = {
-    succeeded: 0,
-    failed: 0,
-    errors: [] as Array<{ url: string; error: string }>,
-  };
+  reporter.sourceSelected(source.label);
+  const listing = await source.acquireListing();
+  reporter.listingAcquired(source.listingDescription, listing);
 
   const resolved = await resolveGenericAdapterSpec(listing, {
     noLlm: options.noLlm,
     refreshAdapter: options.refreshAdapter,
   });
-  console.log(`   Source: ${resolved.source}`);
-  console.log(`   Links: ${resolved.validation.uniqueUrlCount}`);
-  console.log(`   Pagination: ${resolved.spec.pagination.method}\n`);
+  reporter.adapterResolved(resolved);
 
   const collected = await new GenericLinkCollector({
     maxElapsedMs: options.paginationTimeoutMs,
@@ -115,36 +109,104 @@ async function genericDownloadWithListing(
     resolved.spec,
     options.limit,
   );
-  console.log(`📋 ${collected.links.length} articles to download (stopped: ${collected.stoppedBecause})\n`);
+  reporter.articlesCollected(collected.links.length, collected.stoppedBecause);
 
   const tasks = collected.links.map((articleRef, index) =>
-    concurrencyLimit(async () => {
-      try {
-        if (options.delay > 0 && index > 0) {
-          await sleep(options.delay);
-        }
-        const page = await acquireArticle(articleRef.url);
-        const parsed = await extractor.extractArticle({
-          url: articleRef.url,
-          finalUrl: page.finalUrl,
-          html: page.html,
-          metadataHints: { title: articleRef.titleHint },
-        }, resolved.spec);
-        const { markdown } = convertHtmlToMarkdown(parsed.bodyHtml, articleRef.url);
-        await writeArticle(options.output, parsed.metadata, markdown);
-        result.succeeded++;
-        console.log(`  ✅ [${result.succeeded + result.failed}/${collected.links.length}] ${articleRef.titleHint ?? articleRef.url}`);
-      } catch (downloadError) {
-        result.failed++;
-        const message = downloadError instanceof Error ? downloadError.message : String(downloadError);
-        result.errors.push({ url: articleRef.url, error: message });
-        console.log(`  ❌ [${result.succeeded + result.failed}/${collected.links.length}] ${articleRef.url}: ${message}`);
-      }
-    }),
+    concurrencyLimit(() => downloadArticleSafely({
+      articleRef,
+      index,
+      options,
+      source,
+      extractor,
+      adapterSpec: resolved.spec,
+    })),
   );
 
-  await Promise.all(tasks);
-  return result;
+  const outcomes = await Promise.all(tasks);
+  reportArticleOutcomes(outcomes, reporter);
+  return summarizeDownload(outcomes);
+}
+
+async function acquireArticleThroughExtension(
+  extensionFetcher: ExtensionFetcher,
+  articleUrl: string,
+): Promise<PageAnalysisInput> {
+  const page = await extensionFetcher.fetch(articleUrl);
+  return {
+    requestedUrl: articleUrl,
+    finalUrl: page.finalUrl,
+    status: page.status,
+    html: page.html,
+    source: "rendered",
+    renderMode: "always",
+  };
+}
+
+async function downloadArticleSafely(args: {
+  articleRef: ArticleRef;
+  index: number;
+  options: DownloadCommandOptions;
+  source: DownloadSource;
+  extractor: ReadabilityArticleExtractor;
+  adapterSpec: AdapterSpec;
+}): Promise<ArticleDownloadOutcome> {
+  const {
+    articleRef,
+    index,
+    options,
+    source,
+    extractor,
+    adapterSpec,
+  } = args;
+
+  try {
+    await downloadOneArticle(articleRef, index, options, source.acquireArticle, extractor, adapterSpec);
+    return { status: "saved", articleRef };
+  } catch (downloadError) {
+    const message = downloadError instanceof Error ? downloadError.message : String(downloadError);
+    return { status: "failed", articleRef, error: message };
+  }
+}
+
+function reportArticleOutcomes(
+  outcomes: readonly ArticleDownloadOutcome[],
+  reporter: DownloadReporter,
+): void {
+  outcomes.forEach((outcome, index) => {
+    const completed = index + 1;
+    if (outcome.status === "saved") {
+      reporter.articleSaved(completed, outcomes.length, outcome.articleRef.titleHint ?? outcome.articleRef.url);
+      return;
+    }
+    reporter.articleFailed(completed, outcomes.length, outcome.articleRef.url, outcome.error);
+  });
+}
+
+async function downloadOneArticle(
+  articleRef: ArticleRef,
+  index: number,
+  options: DownloadCommandOptions,
+  acquireArticle: ArticleAcquirer,
+  extractor: ReadabilityArticleExtractor,
+  adapterSpec: AdapterSpec,
+): Promise<void> {
+  await applyPerArticleDelay(index, options.delay);
+
+  const page = await acquireArticle(articleRef.url);
+  const parsed = await extractor.extractArticle({
+    url: articleRef.url,
+    finalUrl: page.finalUrl,
+    html: page.html,
+    metadataHints: { title: articleRef.titleHint },
+  }, adapterSpec);
+  const { markdown } = convertHtmlToMarkdown(parsed.bodyHtml, articleRef.url);
+  await writeArticle(options.output, parsed.metadata, markdown);
+}
+
+async function applyPerArticleDelay(index: number, delayMilliseconds: number): Promise<void> {
+  if (delayMilliseconds > 0 && index > 0) {
+    await sleep(delayMilliseconds);
+  }
 }
 
 function sleep(milliseconds: number): Promise<void> {

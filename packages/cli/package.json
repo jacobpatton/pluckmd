@@ -1,7 +1,27 @@
 {
   "name": "harvest-cli",
   "version": "0.1.0",
+  "description": "Bulk download article listings as Markdown with generic AdapterSpecs and optional browser-session support.",
+  "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taisei-ide-0123/harvest.git",
+    "directory": "packages/cli"
+  },
+  "bugs": {
+    "url": "https://github.com/taisei-ide-0123/harvest/issues"
+  },
+  "homepage": "https://github.com/taisei-ide-0123/harvest#readme",
+  "keywords": [
+    "articles",
+    "markdown",
+    "scraping",
+    "readability",
+    "browser-extension",
+    "llm",
+    "agent"
+  ],
   "bin": {
     "harvest": "dist/index.js"
   },
@@ -16,7 +36,7 @@
   },
   "dependencies": {
     "@harvest/shared": "*",
-    "@mozilla/readability": "^0.5.0",
+    "@mozilla/readability": "^0.6.0",
     "commander": "^13.1.0",
     "gray-matter": "^4.0.3",
     "jsdom": "^26.1.0",

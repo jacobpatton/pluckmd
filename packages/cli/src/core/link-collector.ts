@@ -180,10 +180,18 @@ export class GenericLinkCollector implements LinkCollector {
   ): Promise<boolean> {
     if (!evaluator) return false;
 
+    const selector = scopedArticleLinkSelector(spec);
+    const beforeHrefs = await safeHrefs(evaluator, selector);
     await evaluator.scrollToBottom();
     await evaluator.wait(waitAfterLoad(spec));
+    await refreshRenderedState(evaluator, state);
 
-    const clicked = await evaluator.clickPaginationCandidate?.(scopedArticleLinkSelector(spec));
+    const afterScrollHrefs = await safeHrefs(evaluator, selector);
+    if (hasNewHref(beforeHrefs, afterScrollHrefs)) {
+      return true;
+    }
+
+    const clicked = await evaluator.clickPaginationCandidate?.(selector);
     if (clicked?.value) {
       await evaluator.wait(waitAfterLoad(spec));
     }
@@ -203,10 +211,12 @@ export class GenericLinkCollector implements LinkCollector {
     if (!nextUrl || nextUrl === state.currentUrl) return false;
 
     if (evaluator) {
-      // Browser navigation support is intentionally deferred; for rendered
-      // pages, next-url pagination usually has a clickable link and will be
-      // handled by the browser in a later integration issue.
-      return false;
+      if (!evaluator.navigate) return false;
+      const navigated = (await evaluator.navigate(nextUrl)).value;
+      if (!navigated) return false;
+      await evaluator.wait(waitAfterLoad(spec));
+      await refreshRenderedState(evaluator, state);
+      return true;
     }
 
     state.currentHtml = await this.fetchPage(nextUrl);
@@ -316,6 +326,19 @@ async function safeTexts(evaluator: DomEvaluator, selector: string): Promise<str
   } catch {
     return [];
   }
+}
+
+async function safeHrefs(evaluator: DomEvaluator, selector: string): Promise<string[]> {
+  try {
+    return (await evaluator.hrefs(selector)).value;
+  } catch {
+    return [];
+  }
+}
+
+function hasNewHref(before: readonly string[], after: readonly string[]): boolean {
+  const beforeSet = new Set(before);
+  return after.some((href) => !beforeSet.has(href)) || after.length > before.length;
 }
 
 async function refreshRenderedState(evaluator: DomEvaluator, state: CollectionState): Promise<void> {

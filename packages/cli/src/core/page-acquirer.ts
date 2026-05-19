@@ -8,20 +8,29 @@ import type {
 import { getProfileDir } from "@harvest/shared";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
+const DEFAULT_RENDER_SETTLE_MS = 1_000;
+const CONTENT_RETRY_ATTEMPTS = 3;
+const CONTENT_RETRY_DELAY_MS = 250;
+const HREF_RETRY_ATTEMPTS = 8;
+const HREF_RETRY_DELAY_MS = 500;
 const DEFAULT_USER_AGENT =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+const PAGINATION_CLICK_SETTLE_MS = 900;
+const MAX_PAGINATION_CANDIDATES = 5;
 
 interface BrowserContext {
   newPage(): Promise<BrowserPage>;
   close(): Promise<void>;
 }
 
+type BrowserEvaluateFunction<T> = (arg?: unknown) => T | Promise<T>;
+
 interface BrowserPage {
   goto(url: string, options?: { waitUntil?: string; timeout?: number }): Promise<{ status(): number } | null>;
   content(): Promise<string>;
   url(): string;
-  evaluate<T = unknown>(fn: string | Function, arg?: unknown): Promise<T>;
+  evaluate<T = unknown>(fn: string | BrowserEvaluateFunction<T>, arg?: unknown): Promise<T>;
   click(selector: string, options?: { timeout?: number }): Promise<void>;
   waitForTimeout(ms: number): Promise<void>;
   close(): Promise<void>;
@@ -109,6 +118,7 @@ export class RenderingPageAcquirer implements PageAcquirer {
       waitUntil: "domcontentloaded",
       timeout: this.timeoutMs,
     });
+    await page.waitForTimeout(DEFAULT_RENDER_SETTLE_MS);
 
     return {
       requestedUrl: url,
@@ -165,13 +175,18 @@ class PlaywrightDomEvaluator implements DomEvaluator {
   }
 
   async hrefs(selector: string): Promise<DomEvaluationResult<string[]>> {
-    const value = await this.page.evaluate<string[]>(
-      (sel: unknown) =>
-        Array.from(document.querySelectorAll<HTMLAnchorElement>(sel as string))
-          .map((el) => el.href)
-          .filter(Boolean),
-      selector,
-    );
+    let value: string[] = [];
+    for (let attempt = 0; attempt < HREF_RETRY_ATTEMPTS; attempt++) {
+      value = await this.page.evaluate<string[]>(
+        (sel: unknown) =>
+          Array.from(document.querySelectorAll<HTMLAnchorElement>(sel as string))
+            .map((el) => el.href)
+            .filter(Boolean),
+        selector,
+      );
+      if (value.length > 0) break;
+      await this.page.waitForTimeout(HREF_RETRY_DELAY_MS);
+    }
     return { value };
   }
 
@@ -224,23 +239,48 @@ class PlaywrightDomEvaluator implements DomEvaluator {
   }
 
   async clickPaginationCandidate(articleLinkSelector: string): Promise<DomEvaluationResult<boolean>> {
-    const value = await this.page.evaluate<boolean>(
-      async (selector: unknown) => clickPaginationCandidateByExperiment(selector as string),
-      articleLinkSelector,
-    );
-    return { value };
+    try {
+      const value = await this.page.evaluate<boolean>(
+        clickPaginationCandidateInBrowser,
+        {
+          articleLinkSelector,
+          settleMs: PAGINATION_CLICK_SETTLE_MS,
+          maxCandidates: MAX_PAGINATION_CANDIDATES,
+        },
+      );
+      return { value };
+    } catch {
+      return { value: false };
+    }
   }
 
   async scrollToBottom(): Promise<DomEvaluationResult<boolean>> {
     const value = await this.page.evaluate<boolean>(() => {
-      window.scrollTo(0, document.body.scrollHeight);
+      const target = document.scrollingElement || document.documentElement || document.body;
+      if (!target) return false;
+      window.scrollTo(0, target.scrollHeight);
       return true;
     });
     return { value };
   }
 
+  async navigate(url: string): Promise<DomEvaluationResult<boolean>> {
+    await this.page.goto(url, { waitUntil: "domcontentloaded" });
+    await this.page.waitForTimeout(DEFAULT_RENDER_SETTLE_MS);
+    return { value: true };
+  }
+
   async content(): Promise<DomEvaluationResult<string>> {
-    return { value: await this.page.content() };
+    let lastError: unknown;
+    for (let attempt = 0; attempt < CONTENT_RETRY_ATTEMPTS; attempt++) {
+      try {
+        return { value: await this.page.content() };
+      } catch (error) {
+        lastError = error;
+        await this.page.waitForTimeout(CONTENT_RETRY_DELAY_MS);
+      }
+    }
+    throw lastError;
   }
 
   async currentUrl(): Promise<DomEvaluationResult<string>> {
@@ -271,82 +311,84 @@ export function shouldRetryWithRendering(html: string): boolean {
   return scriptCount >= 8 && (linkCount < 5 || textLength < 800);
 }
 
-function clickPaginationCandidateByExperiment(articleLinkSelector: string): Promise<boolean> {
+async function clickPaginationCandidateInBrowser(arg?: unknown): Promise<boolean> {
+  const {
+    articleLinkSelector,
+    settleMs,
+    maxCandidates,
+  } = arg as { articleLinkSelector: string; settleMs: number; maxCandidates: number };
+
   const before = paginationSignature(articleLinkSelector);
   const candidates = paginationCandidates(articleLinkSelector);
-  return tryCandidate(0);
-
-  async function tryCandidate(index: number): Promise<boolean> {
-    const candidate = candidates[index];
-    if (!candidate) return false;
+  for (const candidate of candidates) {
     candidate.element.scrollIntoView({ block: "center", inline: "center" });
     candidate.element.click();
-    await new Promise((resolve) => setTimeout(resolve, 900));
+    await new Promise((resolve) => setTimeout(resolve, settleMs));
     const after = paginationSignature(articleLinkSelector);
     if (advancedPagination(before, after)) return true;
-    return tryCandidate(index + 1);
   }
-}
+  return false;
 
-function paginationCandidates(articleLinkSelector: string): Array<{ element: HTMLElement; score: number }> {
-  const articleLinks = visibleElements(articleLinkSelector);
-  const articleRects = articleLinks.map((element) => element.getBoundingClientRect());
-  const lastArticleBottom = articleRects.reduce((max, rect) => Math.max(max, rect.bottom), 0);
-  const articleLinkSet = new Set(articleLinks);
+  function paginationCandidates(selector: string): Array<{ element: HTMLElement; score: number }> {
+    const articleLinks = visibleElements(selector);
+    const articleRects = articleLinks.map((element) => element.getBoundingClientRect());
+    const lastArticleBottom = articleRects.reduce((max, rect) => Math.max(max, rect.bottom), 0);
+    const articleLinkSet = new Set(articleLinks);
 
-  return Array.from(document.querySelectorAll("button, a, [role='button'], input[type='button'], input[type='submit']"))
-    .filter((element): element is HTMLElement => element instanceof HTMLElement)
-    .filter((element) => !articleLinkSet.has(element))
-    .filter((element) => isVisible(element))
-    .filter((element) => !element.hasAttribute("disabled") && element.getAttribute("aria-disabled") !== "true")
-    .filter((element) => !element.closest("nav, header, footer, aside"))
-    .filter((element) => !element.closest(articleLinkSelector))
-    .map((element) => {
-      const rect = element.getBoundingClientRect();
-      const area = rect.width * rect.height;
-      const belowArticles = lastArticleBottom === 0 || rect.top >= lastArticleBottom - 120;
-      const centered = 1 - Math.min(Math.abs((rect.left + rect.width / 2) - window.innerWidth / 2) / window.innerWidth, 1);
-      const sizeScore = Math.min(area / 8000, 1);
-      const distance = lastArticleBottom === 0 ? 0 : Math.abs(rect.top - lastArticleBottom);
-      const proximity = 1 - Math.min(distance / Math.max(window.innerHeight, 1), 1);
-      return { element, score: (belowArticles ? 4 : 0) + centered + sizeScore + proximity };
-    })
-    .filter((candidate) => candidate.score >= 3.5)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5);
-}
-
-function paginationSignature(articleLinkSelector: string): { hrefs: string[]; height: number; url: string } {
-  return {
-    hrefs: visibleElements(articleLinkSelector)
-      .map((element) => element instanceof HTMLAnchorElement ? element.href : element.getAttribute("href") || "")
-      .filter(Boolean),
-    height: document.documentElement.scrollHeight,
-    url: window.location.href,
-  };
-}
-
-function advancedPagination(
-  before: { hrefs: string[]; height: number; url: string },
-  after: { hrefs: string[]; height: number; url: string },
-): boolean {
-  const beforeSet = new Set(before.hrefs);
-  const newHrefCount = after.hrefs.filter((href) => !beforeSet.has(href)).length;
-  return newHrefCount > 0 || after.hrefs.length > before.hrefs.length || after.height > before.height + 200 || after.url !== before.url;
-}
-
-function visibleElements(selector: string): HTMLElement[] {
-  try {
-    return Array.from(document.querySelectorAll(selector))
+    return Array.from(document.querySelectorAll("button, a, [role='button'], input[type='button'], input[type='submit']"))
       .filter((element): element is HTMLElement => element instanceof HTMLElement)
-      .filter(isVisible);
-  } catch {
-    return [];
+      .filter((element) => !articleLinkSet.has(element))
+      .filter((element) => isVisible(element))
+      .filter((element) => !element.hasAttribute("disabled") && element.getAttribute("aria-disabled") !== "true")
+      .filter((element) => !element.closest("nav, header, footer, aside"))
+      .filter((element) => !element.closest(selector))
+      .map((element) => {
+        const rect = element.getBoundingClientRect();
+        const area = rect.width * rect.height;
+        const belowArticles = lastArticleBottom === 0 || rect.top >= lastArticleBottom - 120;
+        const centered = 1 - Math.min(Math.abs((rect.left + rect.width / 2) - window.innerWidth / 2) / window.innerWidth, 1);
+        const sizeScore = Math.min(area / 8000, 1);
+        const distance = lastArticleBottom === 0 ? 0 : Math.abs(rect.top - lastArticleBottom);
+        const proximity = 1 - Math.min(distance / Math.max(window.innerHeight, 1), 1);
+        return { element, score: (belowArticles ? 4 : 0) + centered + sizeScore + proximity };
+      })
+      .filter((candidate) => candidate.score >= 3.5)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, maxCandidates);
   }
-}
 
-function isVisible(element: HTMLElement): boolean {
-  return Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
+  function paginationSignature(selector: string): { hrefs: string[]; height: number; url: string } {
+    return {
+      hrefs: visibleElements(selector)
+        .map((element) => element instanceof HTMLAnchorElement ? element.href : element.getAttribute("href") || "")
+        .filter(Boolean),
+      height: document.documentElement.scrollHeight,
+      url: window.location.href,
+    };
+  }
+
+  function advancedPagination(
+    previous: { hrefs: string[]; height: number; url: string },
+    next: { hrefs: string[]; height: number; url: string },
+  ): boolean {
+    const previousSet = new Set(previous.hrefs);
+    const newHrefCount = next.hrefs.filter((href) => !previousSet.has(href)).length;
+    return newHrefCount > 0 || next.hrefs.length > previous.hrefs.length || next.height > previous.height + 200 || next.url !== previous.url;
+  }
+
+  function visibleElements(selector: string): HTMLElement[] {
+    try {
+      return Array.from(document.querySelectorAll(selector))
+        .filter((element): element is HTMLElement => element instanceof HTMLElement)
+        .filter(isVisible);
+    } catch {
+      return [];
+    }
+  }
+
+  function isVisible(element: HTMLElement): boolean {
+    return Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
+  }
 }
 
 function countMatches(text: string, pattern: RegExp): number {

@@ -8,7 +8,7 @@ Bulk download blog articles as Markdown files. Works with authenticated and paid
 
 ```bash
 # Install from GitHub
-git clone https://github.com/yourname/harvest.git
+git clone https://github.com/taisei-ide-0123/harvest.git
 cd harvest
 npm install
 npm run build
@@ -109,6 +109,26 @@ Setup:
 The relay listens on `127.0.0.1:7432` by default. Set `HARVEST_PORT` before
 running the CLI if that port is unavailable. The popup is only a status/manual
 connect fallback; the normal workflow does not require token entry.
+
+The extension is intended to be used locally as an unpacked extension. Chrome
+Web Store distribution is not required for the normal workflow; if a packaged
+distribution is added later, the local relay and permission model should be
+reviewed again.
+
+Security and privacy notes:
+
+- The extension asks for broad host access because the CLI may request pages
+  from arbitrary article sites. It only sends rendered HTML to a local harvest
+  CLI relay while a command is running.
+- The relay binds to `127.0.0.1` and is intended for local use only. Do not
+  expose `HARVEST_PORT` through a tunnel or public network interface.
+- Set `HARVEST_EXTENSION_ID=<chrome-extension-id>` to restrict relay
+  connections to one installed extension ID. This is recommended for long-lived
+  local setups.
+- The CLI does not read browser cookie stores directly. Authenticated access is
+  delegated to the active Chrome session or the persistent Playwright profile.
+- Downloading paid or private content may be subject to site terms. harvest
+  provides tooling; users are responsible for using it within their rights.
 
 ### `harvest login <url>`
 
@@ -287,7 +307,7 @@ MIT
 
 ```bash
 # GitHubからインストール
-git clone https://github.com/yourname/harvest.git
+git clone https://github.com/taisei-ide-0123/harvest.git
 cd harvest
 npm install
 npm run build
@@ -358,6 +378,22 @@ Cookie を直接読むことはなく、Extension は要求されたページま
 relay はデフォルトで `127.0.0.1:7432` を使います。ポートを変える場合は CLI
 実行前に `HARVEST_PORT` を指定します。popup は状態確認と手動接続用のfallbackで、
 通常フローでは token 入力は不要です。
+
+Extension はローカルの unpacked extension として使う想定です。通常フローでは
+Chrome Web Store 配布は不要です。将来 packaged distribution を追加する場合は、
+local relay と permission model を改めてレビューしてください。
+
+セキュリティとプライバシー:
+
+- Extension は未知の記事サイトに対応するため `http/https` の広い host
+  permission を要求しますが、CLI実行中の local relay に対して要求された
+  HTMLだけを返します。
+- relay は `127.0.0.1` にのみbindされる前提です。`HARVEST_PORT` を tunnel
+  や公開ネットワークに露出しないでください。
+- `HARVEST_EXTENSION_ID=<chrome-extension-id>` を指定すると、relay への接続を
+  特定のExtension IDに制限できます。
+- 有料・非公開コンテンツの取得や再配布は、利用者自身が権利とサイト規約を
+  確認したうえで行ってください。
 
 ### `harvest setup`
 

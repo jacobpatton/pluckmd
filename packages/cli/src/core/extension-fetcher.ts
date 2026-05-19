@@ -22,6 +22,7 @@ import { WebSocket, WebSocketServer, type RawData } from "ws";
 const CONNECTION_TIMEOUT_MS = 120_000;
 const REQUEST_TIMEOUT_MS = 60_000;
 const DEFAULT_FETCH_TIMEOUT_MS = 30_000;
+const CHROME_EXTENSION_ORIGIN_PREFIX = "chrome-extension://";
 
 interface PendingRequest {
   resolve: (response: ProtocolResponse) => void;
@@ -106,7 +107,7 @@ export class ExtensionFetcher implements Fetcher {
         const requestUrl = new URL(request.url ?? "/", `ws://${request.headers.host ?? "127.0.0.1"}`);
         const origin = request.headers.origin || "";
         const hasValidToken = requestUrl.searchParams.get("token") === token;
-        const hasExtensionOrigin = origin.startsWith("chrome-extension://");
+        const hasExtensionOrigin = isAllowedExtensionOrigin(origin);
         if (!hasValidToken && !hasExtensionOrigin) {
           socket.write("HTTP/1.1 401 Unauthorized\r\n\r\n");
           socket.destroy();
@@ -314,6 +315,10 @@ class ExtensionDomEvaluator implements DomEvaluator {
     return { value: await this.eval<boolean>({ operation: "scrollToBottom" }) };
   }
 
+  async navigate(url: string): Promise<DomEvaluationResult<boolean>> {
+    return { value: await this.eval<boolean>({ operation: "navigate", url }) };
+  }
+
   async content(): Promise<DomEvaluationResult<string>> {
     return { value: await this.eval<string>({ operation: "content" }) };
   }
@@ -337,6 +342,15 @@ class ExtensionDomEvaluator implements DomEvaluator {
     if (!("value" in response)) throw new Error("Unexpected extension DOM response");
     return response.value as T;
   }
+}
+
+function isAllowedExtensionOrigin(origin: string): boolean {
+  if (!origin.startsWith(CHROME_EXTENSION_ORIGIN_PREFIX)) return false;
+
+  const allowedExtensionId = process.env.HARVEST_EXTENSION_ID;
+  if (!allowedExtensionId) return true;
+
+  return origin === `${CHROME_EXTENSION_ORIGIN_PREFIX}${allowedExtensionId}`;
 }
 
 async function readOrCreateToken(): Promise<string> {

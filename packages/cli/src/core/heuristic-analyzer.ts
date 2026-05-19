@@ -12,7 +12,6 @@ import type {
 import { Readability } from "@mozilla/readability";
 import { createDom } from "./dom.js";
 
-const HIGH_CONFIDENCE_THRESHOLD = 0.7;
 const MIN_LINK_CLUSTER_SIZE = 3;
 const EXCLUDE_SELECTORS = [
   "nav",

@@ -1,6 +1,16 @@
 {
   "name": "harvest-monorepo",
   "private": true,
+  "description": "Generic, agent-assisted article harvesting toolkit.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taisei-ide-0123/harvest.git"
+  },
+  "bugs": {
+    "url": "https://github.com/taisei-ide-0123/harvest/issues"
+  },
+  "homepage": "https://github.com/taisei-ide-0123/harvest#readme",
   "workspaces": [
     "packages/shared",
     "packages/cli"
@@ -12,8 +22,9 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "eslint": "^9.0.0",
     "typescript": "^5.7.2",
-    "vitest": "^3.2.1",
-    "eslint": "^9.0.0"
+    "typescript-eslint": "^8.59.3",
+    "vitest": "^3.2.1"
   }
 }

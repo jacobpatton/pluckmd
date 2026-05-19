@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { Command } from "commander";
+import { Command, InvalidArgumentError } from "commander";
 import { downloadCommand } from "./commands/download.js";
 import { inspectCommand } from "./commands/inspect.js";
 import { loginCommand } from "./commands/login.js";
@@ -19,27 +19,28 @@ program
   .command("download [url]")
   .description("Download articles from a blog/magazine URL")
   .option("-o, --output <dir>", "Output directory", "./articles")
-  .option("-c, --concurrency <n>", "Parallel downloads", "2")
-  .option("--delay <ms>", "Delay between requests (ms)", "500")
-  .option("--limit <n>", "Max articles to download", String(DEFAULT_DOWNLOAD_LIMIT))
+  .option("-c, --concurrency <n>", "Parallel downloads", parsePositiveInteger, 2)
+  .option("--delay <ms>", "Delay between requests (ms)", parseNonNegativeInteger, 500)
+  .option("--limit <n>", "Max articles to download", parsePositiveInteger, DEFAULT_DOWNLOAD_LIMIT)
   .option(
     "--pagination-timeout <ms>",
     "Max time to spend collecting paginated listing links (ms)",
-    String(DEFAULT_PAGINATION_TIMEOUT_MS),
+    parsePositiveInteger,
+    DEFAULT_PAGINATION_TIMEOUT_MS,
   )
   .option("--no-llm", "Disable LLM fallback for generic extraction")
-  .option("--render <mode>", "Generic extraction render mode: auto, never, always", "auto")
+  .option("--render <mode>", "Generic extraction render mode: auto, never, always", parseRenderMode, "auto")
   .option("--refresh-adapter", "Bypass cached generic adapter specs")
   .option("--active-tab", "Use the current Chrome tab through the harvest extension as the listing page")
-  .action(async (url: string, opts: Record<string, string | boolean | undefined>) => {
+  .action(async (url: string, opts: DownloadCliOptions) => {
     await downloadCommand(url, {
-      output: opts.output as string,
-      concurrency: Number(opts.concurrency),
-      delay: Number(opts.delay),
-      limit: Number(opts.limit),
-      paginationTimeoutMs: Number(opts.paginationTimeout),
+      output: opts.output,
+      concurrency: opts.concurrency,
+      delay: opts.delay,
+      limit: opts.limit,
+      paginationTimeoutMs: opts.paginationTimeout,
       noLlm: opts.llm === false,
-      render: opts.render as "auto" | "never" | "always",
+      render: opts.render,
       refreshAdapter: Boolean(opts.refreshAdapter),
       activeTab: Boolean(opts.activeTab),
     });
@@ -50,20 +51,20 @@ program
   .description("Inspect generic adapter resolution for a listing URL")
   .option("--explain", "Show resolution details", true)
   .option("--no-llm", "Disable LLM fallback")
-  .option("--render <mode>", "Render mode: auto, never, always", "auto")
+  .option("--render <mode>", "Render mode: auto, never, always", parseRenderMode, "auto")
   .option("--refresh-adapter", "Bypass cached adapter specs")
   .option("--active-tab", "Inspect the current Chrome tab through the harvest extension")
   .option("--agent-request [file]", "Write an agent-readable adapter request when LLM configuration is missing")
   .option("--adapter-spec <file>", "Validate and cache an agent-written AdapterSpec JSON file")
-  .action(async (url: string, opts: Record<string, string | boolean | undefined>) => {
+  .action(async (url: string, opts: InspectCliOptions) => {
     await inspectCommand(url, {
       explain: Boolean(opts.explain),
       noLlm: opts.llm === false,
-      render: opts.render as "auto" | "never" | "always",
+      render: opts.render,
       refreshAdapter: Boolean(opts.refreshAdapter),
       activeTab: Boolean(opts.activeTab),
       agentRequest: opts.agentRequest,
-      adapterSpec: opts.adapterSpec as string | undefined,
+      adapterSpec: opts.adapterSpec,
     });
   });
 
@@ -90,4 +91,47 @@ program
     });
   });
 
-program.parse();
+await program.parseAsync();
+
+interface DownloadCliOptions {
+  output: string;
+  concurrency: number;
+  delay: number;
+  limit: number;
+  paginationTimeout: number;
+  llm?: boolean;
+  render: "auto" | "never" | "always";
+  refreshAdapter?: boolean;
+  activeTab?: boolean;
+}
+
+interface InspectCliOptions {
+  explain?: boolean;
+  llm?: boolean;
+  render: "auto" | "never" | "always";
+  refreshAdapter?: boolean;
+  activeTab?: boolean;
+  agentRequest?: string | boolean;
+  adapterSpec?: string;
+}
+
+function parsePositiveInteger(value: string): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 1) {
+    throw new InvalidArgumentError("must be a positive integer");
+  }
+  return parsed;
+}
+
+function parseNonNegativeInteger(value: string): number {
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new InvalidArgumentError("must be a non-negative integer");
+  }
+  return parsed;
+}
+
+function parseRenderMode(value: string): "auto" | "never" | "always" {
+  if (value === "auto" || value === "never" || value === "always") return value;
+  throw new InvalidArgumentError("render mode must be one of: auto, never, always");
+}
