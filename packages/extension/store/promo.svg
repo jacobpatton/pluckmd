@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 800">
+  <rect width="1280" height="800" fill="#0f172a"/>
+
+  <!-- Title -->
+  <text x="640" y="200" font-family="system-ui, sans-serif" font-size="72" font-weight="700" fill="#f8fafc" text-anchor="middle">pluckmd Bridge</text>
+
+  <!-- Subtitle -->
+  <text x="640" y="270" font-family="system-ui, sans-serif" font-size="32" fill="#94a3b8" text-anchor="middle">Connect pluckmd CLI to your browser for authenticated content</text>
+
+  <!-- Flow diagram -->
+  <!-- Browser box -->
+  <rect x="140" y="380" width="300" height="140" rx="12" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+  <text x="290" y="440" font-family="system-ui, sans-serif" font-size="24" fill="#f8fafc" text-anchor="middle">Chrome Tab</text>
+  <text x="290" y="475" font-family="system-ui, sans-serif" font-size="16" fill="#64748b" text-anchor="middle">Logged-in session</text>
+
+  <!-- Arrow 1 -->
+  <line x1="440" y1="450" x2="520" y2="450" stroke="#3b82f6" stroke-width="3" marker-end="url(#arrowhead)"/>
+
+  <!-- Extension box -->
+  <rect x="520" y="380" width="240" height="140" rx="12" fill="#1e3a5f" stroke="#3b82f6" stroke-width="2"/>
+  <text x="640" y="440" font-family="system-ui, sans-serif" font-size="24" fill="#f8fafc" text-anchor="middle">Extension</text>
+  <text x="640" y="475" font-family="system-ui, sans-serif" font-size="16" fill="#93c5fd" text-anchor="middle">localhost relay</text>
+
+  <!-- Arrow 2 -->
+  <line x1="760" y1="450" x2="840" y2="450" stroke="#3b82f6" stroke-width="3" marker-end="url(#arrowhead)"/>
+
+  <!-- CLI box -->
+  <rect x="840" y="380" width="300" height="140" rx="12" fill="#1e293b" stroke="#334155" stroke-width="2"/>
+  <text x="990" y="440" font-family="system-ui, sans-serif" font-size="24" fill="#f8fafc" text-anchor="middle">pluckmd CLI</text>
+  <text x="990" y="475" font-family="system-ui, sans-serif" font-size="16" fill="#64748b" text-anchor="middle">Articles → Markdown</text>
+
+  <!-- Bottom note -->
+  <text x="640" y="620" font-family="system-ui, sans-serif" font-size="20" fill="#64748b" text-anchor="middle">All data stays on your machine. No remote servers.</text>
+
+  <!-- Arrowhead marker -->
+  <defs>
+    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6"/>
+    </marker>
+  </defs>
+</svg>
