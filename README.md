@@ -1,5 +1,9 @@
 # pluckmd
 
+[![npm version](https://img.shields.io/npm/v/pluckmd)](https://www.npmjs.com/package/pluckmd)
+[![CI](https://github.com/taisei-ide-0123/pluckmd/actions/workflows/ci.yml/badge.svg)](https://github.com/taisei-ide-0123/pluckmd/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 Bulk download blog articles as Markdown files. Works with authenticated and paid content.
 
 **[日本語版はこちら / Japanese version below](#pluckmd-日本語)**
