@@ -3,8 +3,8 @@ import type {
   AdapterValidationResult,
   CachedAdapter,
   PageAnalysisInput,
-} from "@harvest/shared";
-import { getConfigDir } from "@harvest/shared";
+} from "@pluckmd/shared";
+import { getConfigDir } from "@pluckmd/shared";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
@@ -35,7 +35,7 @@ const cachedAdapterSchema = z.object({
   urlPattern: z.string().min(1),
   spec: adapterSpecSchema,
   generatedAt: z.string().datetime(),
-  harvestVersion: z.string().min(1),
+  pluckmdVersion: z.string().min(1),
   sampleUrl: z.string().url(),
   hitCount: z.number().int().min(0),
   zeroResultCount: z.number().int().min(0),
@@ -120,7 +120,7 @@ export class AdapterCache {
     url: string,
     spec: AdapterSpec,
     validation: AdapterValidationResult,
-    harvestVersion: string,
+    pluckmdVersion: string,
   ): Promise<CachedAdapter> {
     if (!validation.valid) {
       throw new Error("Refusing to cache an unvalidated AdapterSpec");
@@ -132,7 +132,7 @@ export class AdapterCache {
       urlPattern: spec.listing.articleLinkHrefPattern,
       spec,
       generatedAt: this.now().toISOString(),
-      harvestVersion,
+      pluckmdVersion,
       sampleUrl: url,
       hitCount: 0,
       zeroResultCount: 0,

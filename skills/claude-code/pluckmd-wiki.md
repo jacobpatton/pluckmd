@@ -1,15 +1,15 @@
 ---
-description: "Build and manage an LLM Wiki from articles fetched with harvest. 5 operations: init/ingest/query/lint/status."
+description: "Build and manage an LLM Wiki from articles fetched with pluckmd. 5 operations: init/ingest/query/lint/status."
 ---
 
-# harvest wiki — LLM Wiki
+# pluckmd wiki — LLM Wiki
 
-A Wiki knowledge base that an LLM incrementally builds and maintains from Markdown articles fetched with harvest.
+A Wiki knowledge base that an LLM incrementally builds and maintains from Markdown articles fetched with pluckmd.
 
 ## Usage
 
 ```
-/harvest-wiki <operation> [options]
+/pluckmd-wiki <operation> [options]
 ```
 
 ## Operations

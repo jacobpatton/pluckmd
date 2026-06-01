@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a synthetic asciicast v2 file from real harvest output, then convert to GIF."""
+"""Build a synthetic asciicast v2 file from real pluckmd output, then convert to GIF."""
 
 import json
 import subprocess
@@ -7,7 +7,7 @@ import time
 import os
 import sys
 
-CAST = "/tmp/harvest-demo.cast"
+CAST = "/tmp/pluckmd-demo.cast"
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 GIF = os.path.join(SCRIPT_DIR, "..", "docs", "demo.gif")
 os.makedirs(os.path.dirname(GIF), exist_ok=True)
@@ -18,20 +18,20 @@ ROWS = 30
 # ── Capture real outputs ──────────────────────────────────
 
 # Clean up previous run
-subprocess.run(["rm", "-rf", "/tmp/harvest-demo-articles"], check=False)
+subprocess.run(["rm", "-rf", "/tmp/pluckmd-demo-articles"], check=False)
 
 download_result = subprocess.run(
     ["node", "--import", "tsx", "packages/cli/src/index.ts",
      "download", "https://lexpresso.io/blog/",
      "--limit", "5", "--delay", "300",
-     "-o", "/tmp/harvest-demo-articles",
+     "-o", "/tmp/pluckmd-demo-articles",
      "--no-llm", "--render=never", "--refresh-adapter"],
     capture_output=True, text=True
 )
 download_out = download_result.stdout + download_result.stderr
 
 # Find the first .md file for the cat demo
-articles_dir = "/tmp/harvest-demo-articles"
+articles_dir = "/tmp/pluckmd-demo-articles"
 md_files = sorted(f for f in os.listdir(articles_dir) if f.endswith(".md")) if os.path.isdir(articles_dir) else []
 if md_files:
     with open(os.path.join(articles_dir, md_files[0])) as f:
@@ -76,9 +76,9 @@ class CastWriter:
 
 w = CastWriter(CAST, COLS, ROWS)
 
-# Scene 1: harvest download
+# Scene 1: pluckmd download
 w.emit(0.5, "$ ")
-w.type_cmd("harvest download https://lexpresso.io/blog/ --limit 5 -o ./articles")
+w.type_cmd("pluckmd download https://lexpresso.io/blog/ --limit 5 -o ./articles")
 w.newline()
 
 for line in download_out.splitlines():
@@ -113,7 +113,7 @@ subprocess.run([
 ], check=True)
 
 os.remove(CAST)
-subprocess.run(["rm", "-rf", "/tmp/harvest-demo-articles"], check=False)
+subprocess.run(["rm", "-rf", "/tmp/pluckmd-demo-articles"], check=False)
 
 size = os.path.getsize(GIF)
 print(f"Demo GIF: {GIF} ({size // 1024}K)")

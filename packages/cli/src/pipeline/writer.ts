@@ -1,6 +1,6 @@
 import { mkdir, writeFile, access } from "node:fs/promises";
 import { join } from "node:path";
-import type { ArticleMetadata } from "@harvest/shared";
+import type { ArticleMetadata } from "@pluckmd/shared";
 
 const MAX_FILENAME_LENGTH = 100;
 

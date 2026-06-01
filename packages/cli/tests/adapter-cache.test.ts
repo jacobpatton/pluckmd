@@ -2,7 +2,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { AdapterSpec, AdapterValidationResult, PageAnalysisInput } from "@harvest/shared";
+import type { AdapterSpec, AdapterValidationResult, PageAnalysisInput } from "@pluckmd/shared";
 import { AdapterCache, normalizeCacheKey } from "../src/core/adapter-cache.js";
 
 let directory: string;
@@ -46,7 +46,7 @@ const validValidation: AdapterValidationResult = {
 };
 
 beforeEach(async () => {
-  directory = await mkdtemp(join(tmpdir(), "harvest-cache-test-"));
+  directory = await mkdtemp(join(tmpdir(), "pluckmd-cache-test-"));
 });
 
 afterEach(async () => {

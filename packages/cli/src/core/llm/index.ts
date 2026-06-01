@@ -3,7 +3,7 @@ import type {
   AdapterValidationResult,
   ListingHeuristicCandidates,
   PageAnalysisInput,
-} from "@harvest/shared";
+} from "@pluckmd/shared";
 import { validateAdapterSpec } from "../adapter-validator.js";
 import { buildLlmRetryPrompt, buildLlmUserPrompt, SYSTEM_PROMPT } from "./prompt.js";
 import { parseAdapterSpec } from "./schema.js";
@@ -30,9 +30,9 @@ export interface LlmResolveResult {
 }
 
 export function loadLlmConfig(env: NodeJS.ProcessEnv = process.env): LlmConfig | null {
-  const apiKey = env.HARVEST_LLM_API_KEY;
-  const baseUrl = env.HARVEST_LLM_BASE_URL;
-  const model = env.HARVEST_LLM_MODEL;
+  const apiKey = env.PLUCKMD_LLM_API_KEY;
+  const baseUrl = env.PLUCKMD_LLM_BASE_URL;
+  const model = env.PLUCKMD_LLM_MODEL;
 
   if (!apiKey || !baseUrl || !model) return null;
   return {
@@ -44,9 +44,9 @@ export function loadLlmConfig(env: NodeJS.ProcessEnv = process.env): LlmConfig |
 
 export function getMissingLlmConfig(env: NodeJS.ProcessEnv = process.env): string[] {
   const missing: string[] = [];
-  if (!env.HARVEST_LLM_API_KEY) missing.push("HARVEST_LLM_API_KEY");
-  if (!env.HARVEST_LLM_BASE_URL) missing.push("HARVEST_LLM_BASE_URL");
-  if (!env.HARVEST_LLM_MODEL) missing.push("HARVEST_LLM_MODEL");
+  if (!env.PLUCKMD_LLM_API_KEY) missing.push("PLUCKMD_LLM_API_KEY");
+  if (!env.PLUCKMD_LLM_BASE_URL) missing.push("PLUCKMD_LLM_BASE_URL");
+  if (!env.PLUCKMD_LLM_MODEL) missing.push("PLUCKMD_LLM_MODEL");
   return missing;
 }
 

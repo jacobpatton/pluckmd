@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ListingHeuristicCandidates, PageAnalysisInput } from "@harvest/shared";
+import type { ListingHeuristicCandidates, PageAnalysisInput } from "@pluckmd/shared";
 import {
   getMissingLlmConfig,
   loadLlmConfig,
@@ -77,17 +77,17 @@ describe("LLM config", () => {
     const env = {};
     expect(loadLlmConfig(env)).toBeNull();
     expect(getMissingLlmConfig(env)).toEqual([
-      "HARVEST_LLM_API_KEY",
-      "HARVEST_LLM_BASE_URL",
-      "HARVEST_LLM_MODEL",
+      "PLUCKMD_LLM_API_KEY",
+      "PLUCKMD_LLM_BASE_URL",
+      "PLUCKMD_LLM_MODEL",
     ]);
   });
 
   it("loads configured OpenAI-compatible settings", () => {
     const config = loadLlmConfig({
-      HARVEST_LLM_API_KEY: "key",
-      HARVEST_LLM_BASE_URL: "https://llm.example/v1/",
-      HARVEST_LLM_MODEL: "model",
+      PLUCKMD_LLM_API_KEY: "key",
+      PLUCKMD_LLM_BASE_URL: "https://llm.example/v1/",
+      PLUCKMD_LLM_MODEL: "model",
     });
 
     expect(config).toEqual({

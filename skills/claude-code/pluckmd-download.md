@@ -1,15 +1,15 @@
 ---
-description: "Batch download blog articles with harvest CLI using generic runtime extraction."
+description: "Batch download blog articles with pluckmd CLI using generic runtime extraction."
 ---
 
-# harvest download — Batch Article Download
+# pluckmd download — Batch Article Download
 
-Batch save blog/magazine articles as Markdown files using the harvest CLI.
+Batch save blog/magazine articles as Markdown files using the pluckmd CLI.
 
 ## Usage
 
 ```
-/harvest-download <URL> [destination]
+/pluckmd-download <URL> [destination]
 ```
 
 ## Steps
@@ -24,15 +24,15 @@ Batch save blog/magazine articles as Markdown files using the harvest CLI.
 A browser will open for manual login. Close the browser when done.
 
 ```bash
-harvest login <login-url>
+pluckmd login <login-url>
 ```
 
-Sessions are saved in `~/.harvest/chrome-profile/` and not required again.
+Sessions are saved in `~/.pluckmd/chrome-profile/` and not required again.
 
 ### Step 3: Run the download
 
 ```bash
-harvest download <URL> -o <destination>
+pluckmd download <URL> -o <destination>
 ```
 
 | Flag | Description | Default |
@@ -56,13 +56,13 @@ head -10 <destination>/*.md
 ### Listing page
 
 ```bash
-harvest download <URL> -o ./articles
+pluckmd download <URL> -o ./articles
 ```
 
 ### Test with a limited number of articles
 
 ```bash
-harvest download <URL> --limit 5 -o /tmp/test
+pluckmd download <URL> --limit 5 -o /tmp/test
 ```
 
 ## Troubleshooting
@@ -72,7 +72,7 @@ harvest download <URL> --limit 5 -o /tmp/test
 A previous process is still running. Delete the lock file:
 
 ```bash
-rm -f ~/.harvest/chrome-profile/SingletonLock
+rm -f ~/.pluckmd/chrome-profile/SingletonLock
 ```
 
 ### Playwright not installed
@@ -84,8 +84,8 @@ npm install playwright && npx playwright install chromium
 ### Only some articles are fetched
 
 For sites with infinite scroll or "Load more" buttons, open the page in Chrome
-with the harvest extension installed and use:
+with the pluckmd extension installed and use:
 
 ```bash
-harvest download --active-tab -o ./articles
+pluckmd download --active-tab -o ./articles
 ```

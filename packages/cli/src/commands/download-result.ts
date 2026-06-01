@@ -1,4 +1,4 @@
-import type { ArticleRef } from "@harvest/shared";
+import type { ArticleRef } from "@pluckmd/shared";
 
 export interface DownloadFailure {
   url: string;

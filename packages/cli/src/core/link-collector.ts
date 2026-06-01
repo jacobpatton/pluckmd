@@ -5,7 +5,7 @@ import type {
   LinkCollectionResult,
   LinkCollector,
   PageAnalysisInput,
-} from "@harvest/shared";
+} from "@pluckmd/shared";
 import { createDom } from "./dom.js";
 
 const DEFAULT_MAX_ITERATIONS = 100;

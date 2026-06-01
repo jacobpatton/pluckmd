@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AdapterSpec, DomEvaluator, PageAnalysisInput } from "@harvest/shared";
+import type { AdapterSpec, DomEvaluator, PageAnalysisInput } from "@pluckmd/shared";
 import { GenericLinkCollector } from "../src/core/link-collector.js";
 
 const baseSpec: AdapterSpec = {

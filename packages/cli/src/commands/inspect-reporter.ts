@@ -1,4 +1,4 @@
-import type { LinkCollectionResult, PageAnalysisInput } from "@harvest/shared";
+import type { LinkCollectionResult, PageAnalysisInput } from "@pluckmd/shared";
 import type { GenericResolveResult } from "../core/generic-resolver.js";
 
 export interface InspectReporter {

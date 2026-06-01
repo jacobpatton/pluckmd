@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-harvest is pre-1.0 software. Security fixes are applied to the main branch and
+pluckmd is pre-1.0 software. Security fixes are applied to the main branch and
 the latest published package when publishing is available.
 
 ## Reporting a Vulnerability
@@ -15,7 +15,7 @@ privately before publishing details.
 
 The Chrome extension connects to a local relay started by the CLI on
 `127.0.0.1`. The relay should never be exposed to a public network. The
-extension may access arbitrary hosts because harvest is designed to work with
+extension may access arbitrary hosts because pluckmd is designed to work with
 unknown article sites, but it only returns page HTML in response to local CLI
 requests while the relay is running.
 
@@ -23,5 +23,5 @@ For stricter local setups, set `HARVEST_EXTENSION_ID` to the installed Chrome
 extension ID. The relay will then reject WebSocket connections from other
 Chrome extensions unless they also provide the fallback token.
 
-Do not use harvest to access, copy, or redistribute content unless you have the
+Do not use pluckmd to access, copy, or redistribute content unless you have the
 right to do so.

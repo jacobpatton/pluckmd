@@ -1,6 +1,6 @@
 export const PROTOCOL_VERSION = 1;
 export const DEFAULT_PORT = 7432;
-export const CONFIG_DIR = ".harvest";
+export const CONFIG_DIR = ".pluckmd";
 export const TOKEN_FILE = "extension-token";
 export const PROFILE_DIR = "chrome-profile";
 

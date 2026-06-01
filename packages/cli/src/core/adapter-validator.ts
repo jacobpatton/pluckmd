@@ -4,7 +4,7 @@ import type {
   AdapterValidationResult,
   DomEvaluator,
   PageAnalysisInput,
-} from "@harvest/shared";
+} from "@pluckmd/shared";
 import { createDom } from "./dom.js";
 
 const LISTING_LINK_THRESHOLD = 3;

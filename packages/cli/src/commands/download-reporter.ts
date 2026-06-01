@@ -1,4 +1,4 @@
-import type { LinkCollectionResult, PageAnalysisInput } from "@harvest/shared";
+import type { LinkCollectionResult, PageAnalysisInput } from "@pluckmd/shared";
 import type { DownloadResult } from "./download-result.js";
 import type { GenericResolveResult } from "../core/generic-resolver.js";
 

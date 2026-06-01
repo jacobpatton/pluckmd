@@ -1,4 +1,4 @@
-# harvest — Agent Skills
+# pluckmd — Agent Skills
 
 ## wiki init <path>
 Create wiki structure: raw/, wiki/, CLAUDE.md, index.md, log.md.

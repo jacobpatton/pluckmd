@@ -2,9 +2,9 @@ import type {
   AdapterValidationResult,
   ListingHeuristicCandidates,
   PageAnalysisInput,
-} from "@harvest/shared";
+} from "@pluckmd/shared";
 
-export const SYSTEM_PROMPT = `You are Harvest's web page structure analyzer.
+export const SYSTEM_PROMPT = `You are Pluckmd's web page structure analyzer.
 
 Instruction hierarchy:
 1. Follow this system message.

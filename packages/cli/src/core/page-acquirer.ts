@@ -4,8 +4,8 @@ import type {
   PageAcquirer,
   PageAnalysisInput,
   RenderMode,
-} from "@harvest/shared";
-import { getProfileDir } from "@harvest/shared";
+} from "@pluckmd/shared";
+import { getProfileDir } from "@pluckmd/shared";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_RENDER_SETTLE_MS = 1_000;
@@ -200,7 +200,7 @@ class PlaywrightDomEvaluator implements DomEvaluator {
   }
 
   async clickByText(patterns: readonly string[]): Promise<DomEvaluationResult<boolean>> {
-    const marker = `harvest-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    const marker = `pluckmd-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const marked = await this.page.evaluate<boolean>(
       (arg: unknown) => {
         const { patterns, marker } = arg as { patterns: readonly string[]; marker: string };
@@ -211,7 +211,7 @@ class PlaywrightDomEvaluator implements DomEvaluator {
           const isVisible = Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
           const isDisabled = element.hasAttribute("disabled") || element.getAttribute("aria-disabled") === "true";
           if (!isVisible || isDisabled || !patterns.some((pattern) => text.includes(pattern))) continue;
-          element.setAttribute("data-harvest-click-target", marker);
+          element.setAttribute("data-pluckmd-click-target", marker);
           element.scrollIntoView({ block: "center", inline: "center" });
           return true;
         }
@@ -222,7 +222,7 @@ class PlaywrightDomEvaluator implements DomEvaluator {
     if (!marked) return { value: false };
 
     try {
-      await this.page.click(`[data-harvest-click-target="${marker}"]`, { timeout: 5000 });
+      await this.page.click(`[data-pluckmd-click-target="${marker}"]`, { timeout: 5000 });
       return { value: true };
     } catch {
       return { value: false };
@@ -230,8 +230,8 @@ class PlaywrightDomEvaluator implements DomEvaluator {
       await this.page.evaluate(
         (currentMarker: unknown) => {
           document
-            .querySelector(`[data-harvest-click-target="${currentMarker as string}"]`)
-            ?.removeAttribute("data-harvest-click-target");
+            .querySelector(`[data-pluckmd-click-target="${currentMarker as string}"]`)
+            ?.removeAttribute("data-pluckmd-click-target");
         },
         marker,
       );

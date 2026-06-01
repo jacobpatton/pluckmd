@@ -11,8 +11,8 @@ export default defineConfig({
   clean: true,
   splitting: false,
   sourcemap: false,
-  // Bundle @harvest/shared into the output so npm users don't need it
-  noExternal: ["@harvest/shared"],
+  // Bundle @pluckmd/shared into the output so npm users don't need it
+  noExternal: ["@pluckmd/shared"],
   // Keep other dependencies as external (installed via package.json)
   external: [
     "commander",

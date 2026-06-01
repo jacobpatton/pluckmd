@@ -22,13 +22,13 @@ afterEach(async () => {
   }
 });
 
-describe("harvest CLI fixture E2E", () => {
+describe("pluckmd CLI fixture E2E", () => {
   it("downloads a paginated local article index as Markdown", async () => {
     const server = await startFixtureServer();
-    const outputDir = await makeTempDir("harvest-output-");
-    const homeDir = await makeTempDir("harvest-home-");
+    const outputDir = await makeTempDir("pluckmd-output-");
+    const homeDir = await makeTempDir("pluckmd-home-");
 
-    const result = await runHarvest([
+    const result = await runPluckmd([
       "download",
       `${server.origin}/blog`,
       "--no-llm",
@@ -62,9 +62,9 @@ describe("harvest CLI fixture E2E", () => {
 
   it("inspects a local fixture without LLM configuration", async () => {
     const server = await startFixtureServer();
-    const homeDir = await makeTempDir("harvest-home-");
+    const homeDir = await makeTempDir("pluckmd-home-");
 
-    const result = await runHarvest([
+    const result = await runPluckmd([
       "inspect",
       `${server.origin}/blog`,
       "--no-llm",
@@ -80,14 +80,14 @@ describe("harvest CLI fixture E2E", () => {
   });
 });
 
-async function runHarvest(args: readonly string[], homeDir: string): Promise<{ stdout: string; stderr: string }> {
+async function runPluckmd(args: readonly string[], homeDir: string): Promise<{ stdout: string; stderr: string }> {
   const env = {
     ...process.env,
     HOME: homeDir,
   };
-  delete env.HARVEST_LLM_API_KEY;
-  delete env.HARVEST_LLM_BASE_URL;
-  delete env.HARVEST_LLM_MODEL;
+  delete env.PLUCKMD_LLM_API_KEY;
+  delete env.PLUCKMD_LLM_BASE_URL;
+  delete env.PLUCKMD_LLM_MODEL;
 
   return execFileAsync(process.execPath, [...cliArgs, ...args], {
     cwd: process.cwd(),

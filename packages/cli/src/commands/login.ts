@@ -1,4 +1,4 @@
-import { getProfileDir } from "@harvest/shared";
+import { getProfileDir } from "@pluckmd/shared";
 import { mkdir } from "node:fs/promises";
 
 export async function loginCommand(url: string): Promise<void> {
@@ -6,7 +6,7 @@ export async function loginCommand(url: string): Promise<void> {
   try {
     loginUrl = new URL(url).href;
   } catch {
-    console.error("Login target must be a full URL, for example: harvest login https://example.com/login");
+    console.error("Login target must be a full URL, for example: pluckmd login https://example.com/login");
     process.exitCode = 1;
     return;
   }
@@ -42,5 +42,5 @@ export async function loginCommand(url: string): Promise<void> {
     browserContext.on("close", () => resolve());
   });
 
-  console.log("✅ Session saved. You can now use: harvest download <url>");
+  console.log("✅ Session saved. You can now use: pluckmd download <url>");
 }

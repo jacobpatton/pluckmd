@@ -1,18 +1,18 @@
 {
-  "name": "harvest-cli",
+  "name": "pluckmd",
   "version": "0.1.0",
   "description": "Bulk download article listings as Markdown with generic AdapterSpecs and optional browser-session support.",
   "license": "MIT",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/taisei-ide-0123/harvest.git",
+    "url": "git+https://github.com/taisei-ide-0123/pluckmd.git",
     "directory": "packages/cli"
   },
   "bugs": {
-    "url": "https://github.com/taisei-ide-0123/harvest/issues"
+    "url": "https://github.com/taisei-ide-0123/pluckmd/issues"
   },
-  "homepage": "https://github.com/taisei-ide-0123/harvest#readme",
+  "homepage": "https://github.com/taisei-ide-0123/pluckmd#readme",
   "keywords": [
     "articles",
     "markdown",
@@ -23,7 +23,7 @@
     "agent"
   ],
   "bin": {
-    "harvest": "dist/index.js"
+    "pluckmd": "dist/index.js"
   },
   "files": [
     "dist",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { ArticleRef } from "@harvest/shared";
+import type { ArticleRef } from "@pluckmd/shared";
 import { summarizeDownload, type ArticleDownloadOutcome } from "../src/commands/download-result.js";
 
 function article(url: string): ArticleRef {

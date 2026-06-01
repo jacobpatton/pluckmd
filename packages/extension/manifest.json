@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "harvest Bridge",
+  "name": "pluckmd Bridge",
   "version": "0.1.0",
-  "description": "Connects the harvest CLI to the current browser tab.",
+  "description": "Connects the pluckmd CLI to the current browser tab.",
   "permissions": ["activeTab", "alarms", "scripting", "storage", "tabs"],
   "host_permissions": ["http://*/*", "https://*/*", "http://127.0.0.1/*", "http://localhost/*"],
   "background": {
@@ -10,7 +10,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "harvest Bridge",
+    "default_title": "pluckmd Bridge",
     "default_popup": "src/popup.html"
   }
 }

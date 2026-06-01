@@ -1,4 +1,4 @@
-import type { AdapterSpec } from "@harvest/shared";
+import type { AdapterSpec } from "@pluckmd/shared";
 import { z } from "zod";
 
 export const adapterSpecSchema = z.object({

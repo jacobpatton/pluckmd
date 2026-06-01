@@ -1,33 +1,33 @@
-# harvest — Agent Skills
+# pluckmd — Agent Skills
 
-This document defines reusable skills for AI coding agents (Codex, Cursor, Windsurf, Cline, Aider, etc.) working with the harvest project.
+This document defines reusable skills for AI coding agents (Codex, Cursor, Windsurf, Cline, Aider, etc.) working with the pluckmd project.
 
 ## Available Skills
 
-1. **harvest-download** — Bulk download blog articles as Markdown via harvest CLI
-2. **harvest-wiki** — Build and maintain an LLM Wiki from harvested articles
-3. **harvest-slides** — Generate interactive HTML slides from wiki entries
+1. **pluckmd-download** — Bulk download blog articles as Markdown via pluckmd CLI
+2. **pluckmd-wiki** — Build and maintain an LLM Wiki from pluckmded articles
+3. **pluckmd-slides** — Generate interactive HTML slides from wiki entries
 
 ---
 
-## Skill: harvest-download
+## Skill: pluckmd-download
 
 ### Purpose
-Bulk download blog articles as Markdown files using the harvest CLI. Handles authenticated/paid content via a dedicated browser profile.
+Bulk download blog articles as Markdown files using the pluckmd CLI. Handles authenticated/paid content via a dedicated browser profile.
 
 ### Prerequisites
 ```bash
-npm install -g harvest-cli
+npm install -g pluckmd
 npx playwright install chromium
 ```
 
 ### Commands
 
-#### `harvest login <login-url>`
+#### `pluckmd login <login-url>`
 
 Open browser for manual login. Session is saved for future use.
 
-#### `harvest download <url> [options]`
+#### `pluckmd download <url> [options]`
 
 Download all articles from a listing page.
 
@@ -42,31 +42,31 @@ Download all articles from a listing page.
 
 Magazine (all articles):
 ```bash
-harvest download <url> -o ./raw
+pluckmd download <url> -o ./raw
 ```
 
 User profile (all articles):
 ```bash
-harvest download <url> -o ./raw
+pluckmd download <url> -o ./raw
 ```
 
 Test with limit:
 ```bash
-harvest download <url> --limit 5 -o /tmp/test
+pluckmd download <url> --limit 5 -o /tmp/test
 ```
 
 ### Troubleshooting
 
-- **SingletonLock error**: `rm -f ~/.harvest/chrome-profile/SingletonLock`
+- **SingletonLock error**: `rm -f ~/.pluckmd/chrome-profile/SingletonLock`
 - **Playwright not installed**: `npm install playwright && npx playwright install chromium`
 - **Partial results**: Use `--active-tab` with the page open in Chrome, increase `--limit`, or increase `--pagination-timeout`
 
 ---
 
-## Skill: harvest-wiki
+## Skill: pluckmd-wiki
 
 ### Purpose
-Build a persistent, structured wiki knowledge base from raw Markdown articles downloaded by harvest. The wiki compounds knowledge over time — unlike RAG, which re-derives answers from scratch on every query.
+Build a persistent, structured wiki knowledge base from raw Markdown articles downloaded by pluckmd. The wiki compounds knowledge over time — unlike RAG, which re-derives answers from scratch on every query.
 
 ### Architecture (3 Layers)
 - `raw/` — Immutable source articles (never modify)
@@ -173,7 +173,7 @@ Print: source count, entry count, coverage %, last ingest date, recent log entri
 
 ---
 
-## Skill: harvest-slides
+## Skill: pluckmd-slides
 
 ### Purpose
 Generate interactive HTML slide decks from wiki entries. Each slide deck visually explains one concept or topic using SVG diagrams, cards, and animations.
@@ -244,13 +244,13 @@ slides "KPI Model"
 
 ---
 
-## Integration with harvest CLI
+## Integration with pluckmd CLI
 
-These skills work with articles downloaded by `harvest download`:
+These skills work with articles downloaded by `pluckmd download`:
 
 ```bash
 # Step 1: Download articles
-harvest download <url> -o ./project/raw
+pluckmd download <url> -o ./project/raw
 
 # Step 2: Initialize wiki
 # (run wiki init skill)

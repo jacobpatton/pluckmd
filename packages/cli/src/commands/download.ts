@@ -3,7 +3,7 @@ import type {
   ArticleRef,
   PageAnalysisInput,
   RenderMode,
-} from "@harvest/shared";
+} from "@pluckmd/shared";
 import {
   ConsoleDownloadReporter,
   type DownloadReporter,

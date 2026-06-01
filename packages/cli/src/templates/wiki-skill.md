@@ -1,12 +1,12 @@
 ---
-description: "Build and manage an LLM Wiki from articles fetched with harvest. 5 operations: init/ingest/query/lint/status."
+description: "Build and manage an LLM Wiki from articles fetched with pluckmd. 5 operations: init/ingest/query/lint/status."
 ---
 
-# harvest wiki
+# pluckmd wiki
 
-Build a Wiki knowledge base from articles fetched with harvest.
+Build a Wiki knowledge base from articles fetched with pluckmd.
 
-Usage: `/harvest-wiki <init|ingest|query|lint|status> [options]`
+Usage: `/pluckmd-wiki <init|ingest|query|lint|status> [options]`
 
 ## init <path>
 Create raw/, wiki/, CLAUDE.md, index.md, log.md. Generate a tag taxonomy tailored to the domain.

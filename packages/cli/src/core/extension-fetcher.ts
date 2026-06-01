@@ -11,8 +11,8 @@ import type {
   PingRequest,
   ProtocolRequest,
   ProtocolResponse,
-} from "@harvest/shared";
-import { PROTOCOL_VERSION, getPort, getTokenPath } from "@harvest/shared";
+} from "@pluckmd/shared";
+import { PROTOCOL_VERSION, getPort, getTokenPath } from "@pluckmd/shared";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -56,7 +56,7 @@ export class ExtensionFetcher implements Fetcher {
     const token = await readOrCreateToken();
 
     await this.startServer(port, token);
-    console.log(`🔌 Waiting for harvest extension on ws://127.0.0.1:${port}`);
+    console.log(`🔌 Waiting for pluckmd extension on ws://127.0.0.1:${port}`);
     console.log("   If the extension is installed and enabled, it should connect automatically.");
 
     try {
@@ -66,7 +66,7 @@ export class ExtensionFetcher implements Fetcher {
       throw new Error(
         `${(error as Error).message}\n` +
         "The relay was running, but the extension did not connect in time.\n" +
-          "Reload the unpacked harvest extension in chrome://extensions, then run the command again.\n" +
+          "Reload the unpacked pluckmd extension in chrome://extensions, then run the command again.\n" +
           `Fallback token for manual popup connection: ${token}\n` +
           `Token file: ${getTokenPath()}`,
       );
@@ -83,7 +83,7 @@ export class ExtensionFetcher implements Fetcher {
             "Content-Type": "application/json",
             "Cache-Control": "no-store",
           });
-          response.end(JSON.stringify({ ok: true, service: "harvest-extension-relay" }));
+          response.end(JSON.stringify({ ok: true, service: "pluckmd-extension-relay" }));
           return;
         }
 
@@ -347,7 +347,7 @@ class ExtensionDomEvaluator implements DomEvaluator {
 function isAllowedExtensionOrigin(origin: string): boolean {
   if (!origin.startsWith(CHROME_EXTENSION_ORIGIN_PREFIX)) return false;
 
-  const allowedExtensionId = process.env.HARVEST_EXTENSION_ID;
+  const allowedExtensionId = process.env.PLUCKMD_EXTENSION_ID;
   if (!allowedExtensionId) return true;
 
   return origin === `${CHROME_EXTENSION_ORIGIN_PREFIX}${allowedExtensionId}`;

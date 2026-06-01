@@ -15,5 +15,5 @@ export function getTokenPath(): string {
 }
 
 export function getPort(): number {
-  return Number(process.env.HARVEST_PORT) || DEFAULT_PORT;
+  return Number(process.env.PLUCKMD_PORT) || DEFAULT_PORT;
 }

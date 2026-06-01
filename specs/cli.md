@@ -2,13 +2,13 @@
 
 ## Executable
 
-`harvest` is defined in `packages/cli/src/index.ts`.
+`pluckmd` is defined in `packages/cli/src/index.ts`.
 
 The CLI must validate options before invoking command implementations. Invalid
 numeric values should fail fast through commander argument validation rather than
 starting network or browser work.
 
-## `harvest download [url]`
+## `pluckmd download [url]`
 
 Downloads articles from a listing page.
 
@@ -44,7 +44,7 @@ Downloads articles from a listing page.
 - If any article fails, the reporter sets `process.exitCode = 1`.
 - Setup/acquisition/resolution failures abort the command.
 
-## `harvest inspect [url]`
+## `pluckmd inspect [url]`
 
 Inspects adapter resolution for a listing page.
 
@@ -74,7 +74,7 @@ Inspects adapter resolution for a listing page.
 6. If LLM config is required but missing, write an agent request and set exit
    code `1`.
 
-## `harvest login <url>`
+## `pluckmd login <url>`
 
 Opens a login URL using the persistent Playwright browser profile.
 
@@ -82,10 +82,10 @@ Opens a login URL using the persistent Playwright browser profile.
 
 1. Validate that the target is a full URL.
 2. Launch Chromium with `headless: false`.
-3. Reuse the harvest profile directory.
+3. Reuse the pluckmd profile directory.
 4. Wait until the browser context closes.
 
-## `harvest setup`
+## `pluckmd setup`
 
 Installs agent skills from `packages/cli/src/templates`.
 

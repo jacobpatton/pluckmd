@@ -2,7 +2,7 @@ import { mkdir, copyFile, readdir, access, writeFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
-import { getConfigDir } from "@harvest/shared";
+import { getConfigDir } from "@pluckmd/shared";
 import { loadTemplate } from "../templates/index.js";
 
 const SKILLS_DIR = join(
@@ -59,7 +59,7 @@ async function installClaudeCodeSkills(): Promise<void> {
   }
 
   console.log(`\n✅ Claude Code skills installed to ${destinationDir}`);
-  console.log("   Use: /harvest-wiki, /harvest-slides");
+  console.log("   Use: /pluckmd-wiki, /pluckmd-slides");
 }
 
 async function installAgentsMd(targetDir: string): Promise<void> {
@@ -84,13 +84,13 @@ async function writeBuiltinSkills(destinationDir: string): Promise<void> {
   const wikiSkill = await loadTemplate("wiki-skill.md");
   const slidesSkill = await loadTemplate("slides-skill.md");
 
-  await writeFile(join(destinationDir, "harvest-download.md"), downloadSkill, "utf-8");
-  await writeFile(join(destinationDir, "harvest-wiki.md"), wikiSkill, "utf-8");
-  await writeFile(join(destinationDir, "harvest-slides.md"), slidesSkill, "utf-8");
+  await writeFile(join(destinationDir, "pluckmd-download.md"), downloadSkill, "utf-8");
+  await writeFile(join(destinationDir, "pluckmd-wiki.md"), wikiSkill, "utf-8");
+  await writeFile(join(destinationDir, "pluckmd-slides.md"), slidesSkill, "utf-8");
 
-  console.log(`  📄 ${destinationDir}/harvest-download.md`);
-  console.log(`  📄 ${destinationDir}/harvest-wiki.md`);
-  console.log(`  📄 ${destinationDir}/harvest-slides.md`);
+  console.log(`  📄 ${destinationDir}/pluckmd-download.md`);
+  console.log(`  📄 ${destinationDir}/pluckmd-wiki.md`);
+  console.log(`  📄 ${destinationDir}/pluckmd-slides.md`);
   console.log(`\n✅ Claude Code skills installed`);
 }
 

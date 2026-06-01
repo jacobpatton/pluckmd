@@ -32,7 +32,7 @@ Rules:
 
 ## Adapter Cache
 
-Validated adapter specs are cached under the harvest config directory in
+Validated adapter specs are cached under the pluckmd config directory in
 `adapters/*.json`.
 
 Cache behavior:
@@ -46,18 +46,18 @@ Cache behavior:
 ## Agent Requests
 
 When heuristics are insufficient and LLM configuration is missing, `inspect`
-writes an agent request JSON under `~/.harvest/agent-requests/`.
+writes an agent request JSON under `~/.pluckmd/agent-requests/`.
 
 The request contains page observations and candidate selectors so an external
 agent can produce an `AdapterSpec`.
 
 ## Browser Profile
 
-The Playwright browser profile is stored under the harvest config directory.
+The Playwright browser profile is stored under the pluckmd config directory.
 
 It is used by:
 
-- `harvest login`
+- `pluckmd login`
 - rendered acquisition through `RenderingPageAcquirer`
 
 The extension path does not read this profile; it delegates auth to the active

@@ -3,7 +3,7 @@ import type {
   AdapterValidationResult,
   ListingHeuristicCandidates,
   PageAnalysisInput,
-} from "@harvest/shared";
+} from "@pluckmd/shared";
 import { AdapterCache } from "./adapter-cache.js";
 import { validateAdapterSpec } from "./adapter-validator.js";
 import { HeuristicListingAnalyzer } from "./heuristic-analyzer.js";
@@ -13,7 +13,7 @@ import {
   resolveAdapterSpecWithLlm,
 } from "./llm/index.js";
 
-const HARVEST_VERSION = "0.1.0";
+const PLUCKMD_VERSION = "0.1.0";
 const HEURISTIC_CONFIDENCE_THRESHOLD = 0.7;
 
 export interface GenericResolveOptions {
@@ -80,7 +80,7 @@ export async function resolveGenericAdapterSpec(
     explanation.push(`  validation: ${validation.valid ? "passed" : "failed"}`);
 
     if (validation.valid && heuristic.confidence >= HEURISTIC_CONFIDENCE_THRESHOLD) {
-      await cache.saveValidated(input.finalUrl, heuristic.spec, validation, HARVEST_VERSION);
+      await cache.saveValidated(input.finalUrl, heuristic.spec, validation, PLUCKMD_VERSION);
       return {
         source: "heuristic",
         spec: heuristic.spec,
@@ -112,7 +112,7 @@ export async function resolveGenericAdapterSpec(
 
   const llm = await resolveAdapterSpecWithLlm(input, candidates, config);
   explanation.push(...llm.explanation.map((line) => `  ${line}`));
-  await cache.saveValidated(input.finalUrl, llm.spec, llm.validation, HARVEST_VERSION);
+  await cache.saveValidated(input.finalUrl, llm.spec, llm.validation, PLUCKMD_VERSION);
 
   return {
     source: "llm",

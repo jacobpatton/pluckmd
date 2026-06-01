@@ -11,7 +11,7 @@ const DEFAULT_DOWNLOAD_LIMIT = 100;
 const DEFAULT_PAGINATION_TIMEOUT_MS = 5 * 60 * 1000;
 
 program
-  .name("harvest")
+  .name("pluckmd")
   .description("Bulk download blog articles as Markdown files")
   .version("0.1.0");
 
@@ -31,7 +31,7 @@ program
   .option("--no-llm", "Disable LLM fallback for generic extraction")
   .option("--render <mode>", "Generic extraction render mode: auto, never, always", parseRenderMode, "auto")
   .option("--refresh-adapter", "Bypass cached generic adapter specs")
-  .option("--active-tab", "Use the current Chrome tab through the harvest extension as the listing page")
+  .option("--active-tab", "Use the current Chrome tab through the pluckmd extension as the listing page")
   .action(async (url: string, opts: DownloadCliOptions) => {
     await downloadCommand(url, {
       output: opts.output,
@@ -53,7 +53,7 @@ program
   .option("--no-llm", "Disable LLM fallback")
   .option("--render <mode>", "Render mode: auto, never, always", parseRenderMode, "auto")
   .option("--refresh-adapter", "Bypass cached adapter specs")
-  .option("--active-tab", "Inspect the current Chrome tab through the harvest extension")
+  .option("--active-tab", "Inspect the current Chrome tab through the pluckmd extension")
   .option("--agent-request [file]", "Write an agent-readable adapter request when LLM configuration is missing")
   .option("--adapter-spec <file>", "Validate and cache an agent-written AdapterSpec JSON file")
   .action(async (url: string, opts: InspectCliOptions) => {
@@ -70,7 +70,7 @@ program
 
 program
   .command("login <url>")
-  .description("Open any login URL in the persistent harvest browser profile")
+  .description("Open any login URL in the persistent pluckmd browser profile")
   .action(async (url: string) => {
     await loginCommand(url);
   });

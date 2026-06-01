@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The extension bridge lets harvest work with authenticated or bot-sensitive pages
+The extension bridge lets pluckmd work with authenticated or bot-sensitive pages
 that are already open in a user's local Chrome session. It is intended for local
 unpacked extension usage. Chrome Web Store distribution is optional and not
 required for the normal workflow.
@@ -11,7 +11,7 @@ required for the normal workflow.
 
 ```mermaid
 sequenceDiagram
-  participant CLI as harvest CLI
+  participant CLI as pluckmd CLI
   participant Relay as 127.0.0.1 WebSocket relay
   participant Ext as Chrome Extension
   participant Tab as Active Chrome tab
@@ -31,7 +31,7 @@ Implemented by `ExtensionFetcher`.
 
 - Binds to `127.0.0.1`.
 - Default port is `7432`, overridable with `HARVEST_PORT`.
-- Creates or reads a fallback token at `~/.harvest/extension-token`.
+- Creates or reads a fallback token at `~/.pluckmd/extension-token`.
 - Exposes `/health` for extension auto-connect checks.
 - Accepts WebSocket upgrade when:
   - token is valid, or
@@ -63,7 +63,7 @@ The extension requests:
 - `tabs`
 - host access for `http://*/*`, `https://*/*`, localhost, and `127.0.0.1`
 
-The broad `http/https` host access exists because harvest targets unknown
+The broad `http/https` host access exists because pluckmd targets unknown
 article sites. The extension should only send HTML to the local relay while a
 CLI command is running.
 

@@ -8,7 +8,7 @@ import type {
   PageAnalysisInput,
   PaginationCandidate,
   ParsedArticle,
-} from "@harvest/shared";
+} from "@pluckmd/shared";
 import { Readability } from "@mozilla/readability";
 import { createDom } from "./dom.js";
 

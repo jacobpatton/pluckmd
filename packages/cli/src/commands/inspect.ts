@@ -1,4 +1,4 @@
-import type { LinkCollectionResult, PageAnalysisInput, RenderMode } from "@harvest/shared";
+import type { LinkCollectionResult, PageAnalysisInput, RenderMode } from "@pluckmd/shared";
 import { readFile } from "node:fs/promises";
 import { ConsoleInspectReporter, type InspectReporter } from "./inspect-reporter.js";
 import { AdapterCache } from "../core/adapter-cache.js";

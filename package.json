@@ -1,16 +1,16 @@
 {
-  "name": "harvest-monorepo",
+  "name": "pluckmd-monorepo",
   "private": true,
-  "description": "Generic, agent-assisted article harvesting toolkit.",
+  "description": "Generic, agent-assisted article extraction toolkit.",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/taisei-ide-0123/harvest.git"
+    "url": "git+https://github.com/taisei-ide-0123/pluckmd.git"
   },
   "bugs": {
-    "url": "https://github.com/taisei-ide-0123/harvest/issues"
+    "url": "https://github.com/taisei-ide-0123/pluckmd/issues"
   },
-  "homepage": "https://github.com/taisei-ide-0123/harvest#readme",
+  "homepage": "https://github.com/taisei-ide-0123/pluckmd#readme",
   "workspaces": [
     "packages/shared",
     "packages/cli"

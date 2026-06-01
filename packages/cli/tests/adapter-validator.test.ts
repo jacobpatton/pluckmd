@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { AdapterSpec, PageAnalysisInput } from "@harvest/shared";
+import type { AdapterSpec, PageAnalysisInput } from "@pluckmd/shared";
 import { validateAdapterSpec } from "../src/core/adapter-validator.js";
 
 const validHtml = `

@@ -1,6 +1,6 @@
 const PROTOCOL_VERSION = 1;
 const DEFAULT_PORT = 7432;
-const RETRY_ALARM = "harvest-retry-connect";
+const RETRY_ALARM = "pluckmd-retry-connect";
 const RELAY_HEALTH_TIMEOUT_MS = 500;
 const RECONNECT_DELAY_MS = 2000;
 const PAGINATION_CLICK_SETTLE_MS = 900;

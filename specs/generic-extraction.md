@@ -18,7 +18,7 @@ Acquires `PageAnalysisInput` from a URL.
   JavaScript-heavy.
 
 Static fetch uses a browser-like user agent. Rendered acquisition uses a
-persistent Chromium profile under the harvest config directory.
+persistent Chromium profile under the pluckmd config directory.
 
 ### `ExtensionFetcher`
 
@@ -107,7 +107,7 @@ collisions by suffixing duplicate names.
 ## Agent-Assisted Path
 
 When heuristics cannot resolve a valid spec and LLM settings are unavailable,
-`inspect` writes an agent request JSON under the harvest config directory. A
+`inspect` writes an agent request JSON under the pluckmd config directory. A
 coding agent can read the observed candidates and produce an `AdapterSpec` JSON.
 The user then validates and caches it through `--adapter-spec`.
 

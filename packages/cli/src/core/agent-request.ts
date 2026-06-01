@@ -1,5 +1,5 @@
-import type { ListingHeuristicCandidates, PageAnalysisInput } from "@harvest/shared";
-import { getConfigDir } from "@harvest/shared";
+import type { ListingHeuristicCandidates, PageAnalysisInput } from "@pluckmd/shared";
+import { getConfigDir } from "@pluckmd/shared";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { buildLlmUserPrompt, SYSTEM_PROMPT } from "./llm/prompt.js";
@@ -25,7 +25,7 @@ export async function writeAgentRequest(
   const specOutputPath = path.replace(/\.json$/i, ".adapter-spec.json");
 
   const request = {
-    task: "Produce one AdapterSpec JSON object for harvest. Do not include markdown or prose in the adapter spec file.",
+    task: "Produce one AdapterSpec JSON object for pluckmd. Do not include markdown or prose in the adapter spec file.",
     url: input.finalUrl,
     render: {
       source: input.source,
@@ -34,7 +34,7 @@ export async function writeAgentRequest(
     },
     missingLlmConfig: options.missingConfig ?? [],
     suggestedSpecOutputPath: specOutputPath,
-    applyCommand: `harvest inspect ${input.finalUrl} --adapter-spec ${specOutputPath}`,
+    applyCommand: `pluckmd inspect ${input.finalUrl} --adapter-spec ${specOutputPath}`,
     adapterSpecSchema: {
       id: "optional string",
       listing: {

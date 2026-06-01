@@ -2,14 +2,14 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import type { PageAnalysisInput } from "@harvest/shared";
+import type { PageAnalysisInput } from "@pluckmd/shared";
 import { AdapterCache } from "../src/core/adapter-cache.js";
 import { resolveGenericAdapterSpec } from "../src/core/generic-resolver.js";
 
 let directory: string;
 
 beforeEach(async () => {
-  directory = await mkdtemp(join(tmpdir(), "harvest-resolver-test-"));
+  directory = await mkdtemp(join(tmpdir(), "pluckmd-resolver-test-"));
 });
 
 afterEach(async () => {

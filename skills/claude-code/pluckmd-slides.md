@@ -2,14 +2,14 @@
 description: "Generate interactive HTML slides from concepts and topics in the Wiki. Includes SVG diagrams and illustrations."
 ---
 
-# harvest slides — HTML Slide Generation
+# pluckmd slides — HTML Slide Generation
 
 Generate interactive dark-themed HTML slides from Wiki entries.
 
 ## Usage
 
 ```
-/harvest-slides <wiki entry path or concept name>
+/pluckmd-slides <wiki entry path or concept name>
 ```
 
 ## Steps
