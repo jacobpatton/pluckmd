@@ -1,6 +1,6 @@
 {
   "name": "pluckmd",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Bulk download article listings as Markdown with generic AdapterSpecs and optional browser-session support.",
   "license": "MIT",
   "type": "module",

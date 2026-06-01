@@ -13,7 +13,7 @@ const DEFAULT_PAGINATION_TIMEOUT_MS = 5 * 60 * 1000;
 program
   .name("pluckmd")
   .description("Bulk download blog articles as Markdown files")
-  .version("0.1.0");
+  .version("0.1.1");
 
 program
   .command("download [url]")
@@ -91,7 +91,19 @@ program
     });
   });
 
-await program.parseAsync();
+try {
+  await program.parseAsync();
+} catch (error: unknown) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  if (message.includes("playwright") || message.includes("Executable doesn't exist")) {
+    console.error("\n❌ Playwright is not installed or Chromium is missing.");
+    console.error("   Run: npx playwright install chromium\n");
+  } else {
+    console.error(`\n❌ ${message}\n`);
+  }
+  process.exit(1);
+}
 
 interface DownloadCliOptions {
   output: string;
