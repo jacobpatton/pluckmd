@@ -7,22 +7,47 @@ Bulk download blog articles as Markdown files. Works with authenticated and paid
 ## Quick Start
 
 ```bash
-# Install from GitHub
+# Install globally from npm
+npm install -g harvest-cli
+
+# Or run directly with npx (no install needed)
+npx harvest-cli download https://example.com/blog -o ./articles
+
+# Optional: install Playwright for JS-rendered pages
+npx playwright install chromium
+```
+
+```bash
+# Download articles from a listing page
+harvest download https://example.com/blog -o ./articles
+
+# Inspect how harvest resolves selectors for a page
+harvest inspect https://example.com/blog --no-llm
+
+# Log in when a site requires authentication
+harvest login https://example.com/login
+```
+
+<details>
+<summary>Install from source</summary>
+
+```bash
 git clone https://github.com/taisei-ide-0123/harvest.git
 cd harvest
 npm install
 npm run build
 npm link -w packages/cli
-npx playwright install chromium
+```
+</details>
 
-# Log in when a site requires authentication
-harvest login https://example.com/login
+## Demo
 
-# Download articles from a listing page
-harvest download https://example.com/blog -o ./articles
+![harvest download demo](docs/demo.gif)
 
-# Inspect extraction for a listing page
-harvest inspect https://example.com/blog --no-llm --render=auto
+harvest also ships with [AI agent skills](#ai-agent-skills) for Claude Code, Codex, Cursor, and more. Ask your agent to collect articles and build a knowledge base:
+
+```
+> Collect articles from https://example.com/blog and build a wiki
 ```
 
 ## How It Works
@@ -306,19 +331,47 @@ MIT
 ## クイックスタート
 
 ```bash
-# GitHubからインストール
+# npmからグローバルインストール
+npm install -g harvest-cli
+
+# またはnpxで直接実行（インストール不要）
+npx harvest-cli download https://example.com/blog -o ./articles
+
+# オプション: JS描画が必要なページ用にPlaywrightをインストール
+npx playwright install chromium
+```
+
+```bash
+# 記事を一括ダウンロード
+harvest download https://example.com/blog -o ./articles
+
+# セレクタの解析結果を確認
+harvest inspect https://example.com/blog --no-llm
+
+# ログインが必要な場合
+harvest login https://example.com/login
+```
+
+<details>
+<summary>ソースからインストール</summary>
+
+```bash
 git clone https://github.com/taisei-ide-0123/harvest.git
 cd harvest
 npm install
 npm run build
 npm link -w packages/cli
-npx playwright install chromium
+```
+</details>
 
-# ログインが必要な場合
-harvest login https://example.com/login
+## デモ
 
-# 記事を一括ダウンロード
-harvest download https://example.com/blog -o ./articles
+![harvest download デモ](docs/demo.gif)
+
+harvestはClaude Code、Codex、Cursorなど向けの[AIエージェントスキル](#aiエージェントスキル)も同梱しています。エージェントに話しかけるだけで記事収集からWiki構築まで実行できます：
+
+```
+> https://example.com/blog から記事を集めてWikiを構築して
 ```
 
 ## 仕組み

@@ -31,11 +31,10 @@
   ],
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "tsup",
     "dev": "tsx src/index.ts"
   },
   "dependencies": {
-    "@harvest/shared": "*",
     "@mozilla/readability": "^0.6.0",
     "commander": "^13.1.0",
     "gray-matter": "^4.0.3",
@@ -51,6 +50,7 @@
     "@types/node": "^20.0.0",
     "@types/turndown": "^5.0.5",
     "@types/ws": "^8.18.1",
+    "tsup": "^8.5.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },
