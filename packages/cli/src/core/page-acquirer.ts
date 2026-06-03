@@ -6,6 +6,13 @@ import type {
   RenderMode,
 } from "@pluckmd/shared";
 import { getProfileDir } from "@pluckmd/shared";
+import { Agent, fetch as undiciFetch } from "undici";
+
+// Node's global fetch caps response headers at ~16 KB and throws
+// UND_ERR_HEADERS_OVERFLOW on sites that emit large Set-Cookie/consent headers
+// (e.g. Yahoo). undici's fetch with a custom Agent lets us raise maxHeaderSize
+// while keeping built-in redirect following and gzip/br/deflate decoding.
+const staticFetchAgent = new Agent({ maxHeaderSize: 1024 * 1024 });
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_RENDER_SETTLE_MS = 1_000;
@@ -91,7 +98,8 @@ export class RenderingPageAcquirer implements PageAcquirer {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await fetch(url, {
+      const response = await undiciFetch(url, {
+        dispatcher: staticFetchAgent,
         redirect: "follow",
         signal: controller.signal,
         headers: {

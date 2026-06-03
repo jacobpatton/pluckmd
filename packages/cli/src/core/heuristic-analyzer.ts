@@ -72,6 +72,8 @@ export class ReadabilityArticleExtractor implements ArticleExtractor {
     const metadata = {
       url: input.url,
       title: extractText(document, spec.article.metadataSelectors?.title) ||
+        extractMeta(document, 'meta[property="og:title"]') ||
+        extractMeta(document, 'meta[name="twitter:title"]') ||
         document.querySelector("h1")?.textContent?.trim() ||
         document.querySelector("title")?.textContent?.trim() ||
         input.metadataHints?.title ||
@@ -447,6 +449,10 @@ function hasInfiniteScrollSignal(document: Document): boolean {
 function extractText(document: Document, selector: string | undefined): string | undefined {
   if (!selector) return undefined;
   return document.querySelector(selector)?.textContent?.trim() || undefined;
+}
+
+function extractMeta(document: Document, selector: string): string | undefined {
+  return document.querySelector(selector)?.getAttribute("content")?.trim() || undefined;
 }
 
 function extractDate(document: Document, selector: string | undefined): string | undefined {
