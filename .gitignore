@@ -10,3 +10,8 @@ Thumbs.db
 
 .env
 .env.*
+
+# Local dev writes rendered articles here (default `-o ./articles` resolves to
+# packages/cli/articles from the workspace). Ignore output, keep the demo.
+/packages/cli/articles/*
+!/packages/cli/articles/Portfolio_manager_explains_why_Sanmina_Corp._is_a_good_buy.md

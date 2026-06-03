@@ -96,10 +96,19 @@ async function runGenericDownload(
   const listing = await source.acquireListing();
   reporter.listingAcquired(source.listingDescription, listing);
 
-  const resolved = await resolveGenericAdapterSpec(listing, {
-    noLlm: options.noLlm,
-    refreshAdapter: options.refreshAdapter,
-  });
+  let resolved: Awaited<ReturnType<typeof resolveGenericAdapterSpec>>;
+  try {
+    resolved = await resolveGenericAdapterSpec(listing, {
+      noLlm: options.noLlm,
+      refreshAdapter: options.refreshAdapter,
+    });
+  } catch (resolveError) {
+    // The URL did not look like a listing (no repeated article-link clusters).
+    // Fall back to treating the fetched page itself as a single article.
+    const message = resolveError instanceof Error ? resolveError.message : String(resolveError);
+    reporter.singleArticleFallback?.(message);
+    return downloadSingleArticle(listing, options, extractor, reporter);
+  }
   reporter.adapterResolved(resolved);
 
   const collected = await new GenericLinkCollector({
@@ -125,6 +134,40 @@ async function runGenericDownload(
   const outcomes = await Promise.all(tasks);
   reportArticleOutcomes(outcomes, reporter);
   return summarizeDownload(outcomes);
+}
+
+async function downloadSingleArticle(
+  page: PageAnalysisInput,
+  options: DownloadCommandOptions,
+  extractor: ReadabilityArticleExtractor,
+  reporter: DownloadReporter,
+): Promise<DownloadResult> {
+  const articleRef: ArticleRef = { url: page.finalUrl };
+  const singleArticleSpec: AdapterSpec = {
+    listing: { articleLinkSelector: "a[href]", articleLinkHrefPattern: ".*" },
+    article: { method: "readability" },
+    pagination: { method: "none" },
+    evidence: "Single-article fallback: URL was not a resolvable listing page",
+  };
+
+  reporter.articlesCollected(1, "complete");
+  try {
+    const parsed = await extractor.extractArticle({
+      url: articleRef.url,
+      finalUrl: page.finalUrl,
+      html: page.html,
+    }, singleArticleSpec);
+    const { markdown } = convertHtmlToMarkdown(parsed.bodyHtml, articleRef.url);
+    await writeArticle(options.output, parsed.metadata, markdown);
+    const outcome: ArticleDownloadOutcome = { status: "saved", articleRef };
+    reportArticleOutcomes([outcome], reporter);
+    return summarizeDownload([outcome]);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const outcome: ArticleDownloadOutcome = { status: "failed", articleRef, error: message };
+    reportArticleOutcomes([outcome], reporter);
+    return summarizeDownload([outcome]);
+  }
 }
 
 async function acquireArticleThroughExtension(

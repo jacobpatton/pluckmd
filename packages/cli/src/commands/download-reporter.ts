@@ -9,6 +9,7 @@ export interface DownloadReporter {
   articlesCollected(total: number, stoppedBecause: LinkCollectionResult["stoppedBecause"]): void;
   articleSaved(completed: number, total: number, title: string): void;
   articleFailed(completed: number, total: number, url: string, error: string): void;
+  singleArticleFallback?(reason: string): void;
   finished(result: DownloadResult): void;
 }
 
@@ -39,6 +40,11 @@ export class ConsoleDownloadReporter implements DownloadReporter {
 
   articleFailed(completed: number, total: number, url: string, error: string): void {
     this.reportArticleProgress("❌", completed, total, `${url}: ${error}`);
+  }
+
+  singleArticleFallback(reason: string): void {
+    console.log(`ℹ️  Listing not resolved (${reason})`);
+    console.log("   Falling back to single-article extraction\n");
   }
 
   finished(result: DownloadResult): void {
