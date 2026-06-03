@@ -6,12 +6,14 @@ import type {
   RenderMode,
 } from "@pluckmd/shared";
 import { getProfileDir } from "@pluckmd/shared";
-import { request as httpsRequest } from "node:https";
-import { request as httpRequest, type IncomingMessage } from "node:http";
-import { gunzipSync, inflateSync, brotliDecompressSync } from "node:zlib";
+import { Agent, fetch as undiciFetch } from "undici";
 
-const MAX_RESPONSE_HEADER_BYTES = 1024 * 1024;
-const MAX_REDIRECTS = 5;
+// Node's global fetch caps response headers at ~16 KB and throws
+// UND_ERR_HEADERS_OVERFLOW on sites that emit large Set-Cookie/consent headers
+// (e.g. Yahoo). undici's fetch with a custom Agent lets us raise maxHeaderSize
+// while keeping built-in redirect following and gzip/br/deflate decoding.
+const staticFetchAgent = new Agent({ maxHeaderSize: 1024 * 1024 });
+
 const DEFAULT_TIMEOUT_MS = 30_000;
 const DEFAULT_RENDER_SETTLE_MS = 1_000;
 const CONTENT_RETRY_ATTEMPTS = 3;
@@ -92,57 +94,28 @@ export class RenderingPageAcquirer implements PageAcquirer {
     }
   }
 
-  private async acquireStatic(url: string, redirectsRemaining = MAX_REDIRECTS): Promise<StaticFetchResult> {
-    // Node's global fetch (undici) caps response headers at ~16 KB and throws
-    // UND_ERR_HEADERS_OVERFLOW on sites that emit large Set-Cookie/consent
-    // headers (e.g. Yahoo). node:http(s) lets us raise maxHeaderSize per request.
-    const target = new URL(url);
-    const request = target.protocol === "http:" ? httpRequest : httpsRequest;
-
-    return new Promise<StaticFetchResult>((resolve, reject) => {
-      const req = request(
-        target,
-        {
-          method: "GET",
-          maxHeaderSize: MAX_RESPONSE_HEADER_BYTES,
-          timeout: this.timeoutMs,
-          headers: {
-            "User-Agent": DEFAULT_USER_AGENT,
-            Accept: "text/html,application/xhtml+xml",
-            "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
-            "Accept-Encoding": "gzip, deflate, br",
-          },
+  private async acquireStatic(url: string): Promise<StaticFetchResult> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const response = await undiciFetch(url, {
+        dispatcher: staticFetchAgent,
+        redirect: "follow",
+        signal: controller.signal,
+        headers: {
+          "User-Agent": DEFAULT_USER_AGENT,
+          Accept: "text/html,application/xhtml+xml",
+          "Accept-Language": "ja,en-US;q=0.9,en;q=0.8",
         },
-        (res: IncomingMessage) => {
-          const status = res.statusCode ?? 0;
-          const location = res.headers.location;
-          if (status >= 300 && status < 400 && location && redirectsRemaining > 0) {
-            res.resume();
-            const next = new URL(location, target).href;
-            this.acquireStatic(next, redirectsRemaining - 1).then(resolve, reject);
-            return;
-          }
-
-          const chunks: Buffer[] = [];
-          res.on("data", (chunk: Buffer) => chunks.push(chunk));
-          res.on("end", () => {
-            try {
-              resolve({
-                html: decodeBody(Buffer.concat(chunks), res.headers["content-encoding"]),
-                finalUrl: target.href,
-                status,
-              });
-            } catch (error) {
-              reject(error);
-            }
-          });
-        },
-      );
-
-      req.on("timeout", () => req.destroy(new Error(`Request timed out after ${this.timeoutMs}ms`)));
-      req.on("error", reject);
-      req.end();
-    });
+      });
+      return {
+        html: await response.text(),
+        finalUrl: response.url || url,
+        status: response.status,
+      };
+    } finally {
+      clearTimeout(timeout);
+    }
   }
 
   private async acquireRendered(url: string): Promise<PageAnalysisInput> {
@@ -423,19 +396,6 @@ async function clickPaginationCandidateInBrowser(arg?: unknown): Promise<boolean
 
   function isVisible(element: HTMLElement): boolean {
     return Boolean(element.offsetWidth || element.offsetHeight || element.getClientRects().length);
-  }
-}
-
-function decodeBody(body: Buffer, encoding: string | undefined): string {
-  switch ((encoding ?? "").toLowerCase()) {
-    case "gzip":
-      return gunzipSync(body).toString("utf8");
-    case "br":
-      return brotliDecompressSync(body).toString("utf8");
-    case "deflate":
-      return inflateSync(body).toString("utf8");
-    default:
-      return body.toString("utf8");
   }
 }
 
