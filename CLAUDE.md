@@ -62,3 +62,9 @@ Plain JS, no build. `background.js` auto-connects to the CLI relay on port 7432 
 
 - `AdapterSpec` is intentionally data-only JSON so it can be written by an LLM or human and validated mechanically. The agent-assisted path (`inspect --agent-request` / `--adapter-spec`) is first-class for sites where the LLM env vars aren't configured.
 - The `skills/` directory contains Markdown skill files that `pluckmd setup` copies into a project for Claude Code (`CLAUDE.md`) or `AGENTS.md` for other AI agents — this is how the tool ships agent skills to users.
+
+## Active Technologies
+- TypeScript, Node >= 20 + Commander.js (CLI), Vitest (tests) (main)
+
+## Recent Changes
+- main: Added TypeScript, Node >= 20 + Commander.js (CLI), Vitest (tests)

@@ -6,7 +6,7 @@ metadata:
   author: github-spec-kit
   source: git:commands/speckit.git.commit.md
 user-invocable: true
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # Auto-Commit Changes
@@ -39,13 +39,13 @@ In `.specify/extensions/git/git-config.yml`:
 
 ```yaml
 auto_commit:
-  default: false          # Global toggle — set true to enable for all commands
+  default: false # Global toggle — set true to enable for all commands
   after_specify:
-    enabled: true          # Override per-command
-    message: "[Spec Kit] Add specification"
+    enabled: true # Override per-command
+    message: '[Spec Kit] Add specification'
   after_plan:
     enabled: false
-    message: "[Spec Kit] Add implementation plan"
+    message: '[Spec Kit] Add implementation plan'
 ```
 
 ## Graceful Degradation
@@ -53,3 +53,4 @@ auto_commit:
 - If Git is not available or the current directory is not a repository: skips with a warning
 - If no config file exists: skips (disabled by default)
 - If no changes to commit: skips with a message
+

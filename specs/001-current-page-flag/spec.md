@@ -5,6 +5,12 @@
 **Status**: Draft  
 **Input**: User description: "add a --current-page flag to target scraping to the current page (either the URL passed to the command or the --current-tab). This should circumvent any page-crawling activity and only scrape the contents of the provided page."
 
+## Clarifications
+
+### Session 2026-06-17
+
+- Q: When `--current-page` is combined with crawling-scoped flags (e.g., `--limit`, `--page-limit`), should the tool silently ignore them or emit a non-fatal warning? → A: Emit a non-fatal warning to stderr, then proceed.
+
 ## User Scenarios & Testing _(mandatory)_
 
 ### User Story 1 - Scrape a single known URL directly (Priority: P1)
@@ -42,7 +48,7 @@ A user is browsing a page (e.g., a paywalled or authenticated article) in Chrome
 
 - What happens when `--current-page` is passed without a URL and without `--current-tab`? The command should exit with a clear error indicating that a target is required.
 - What happens if the page fetch fails (network error, 404)? The tool should surface the error and exit non-zero, same as the normal failure path.
-- What happens when `--current-page` is combined with flags that imply crawling (e.g., `--limit`, `--page-limit`)? Those flags should be silently ignored or emit a warning, since crawling is bypassed.
+- What happens when `--current-page` is combined with flags that imply crawling (e.g., `--limit`, `--page-limit`)? The tool emits a non-fatal warning to stderr for each such flag (e.g., `warning: --limit has no effect with --current-page`) and then proceeds.
 
 ## Requirements _(mandatory)_
 
@@ -53,7 +59,7 @@ A user is browsing a page (e.g., a paywalled or authenticated article) in Chrome
 - **FR-003**: When `--current-page` is set, the tool MUST fetch and convert only the single target URL (from the command argument or from the active browser tab if `--current-tab` is also set).
 - **FR-004**: When `--current-page` is set, the tool MUST still apply content extraction (readability parsing + Markdown conversion) and write the output file in the same format as a normal single-article result.
 - **FR-005**: When `--current-page` is set without a URL argument and without `--current-tab`, the tool MUST exit with an informative error message.
-- **FR-006**: When `--current-page` is set alongside crawling-scoped flags (e.g., pagination limits), the tool MUST either ignore those flags or emit a non-fatal warning indicating they have no effect.
+- **FR-006**: When `--current-page` is set alongside crawling-scoped flags (e.g., `--limit`, `--page-limit`), the tool MUST emit a non-fatal warning to stderr indicating those flags have no effect, then proceed normally.
 
 ### Key Entities
 
