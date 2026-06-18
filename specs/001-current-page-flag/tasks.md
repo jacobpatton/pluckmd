@@ -18,10 +18,10 @@
 
 **⚠️ CRITICAL**: Both source files must be updated before any user story can be verified.
 
-- [ ] T001 Add `currentPage?: boolean` to `DownloadCommandOptions` interface in `packages/cli/src/commands/download.ts`
-- [ ] T002 [P] Add `currentPage?: boolean` to `DownloadCliOptions` interface in `packages/cli/src/index.ts`
-- [ ] T003 Register `.option("--current-page", "Scrape only the target page without any crawling")` on the download command in `packages/cli/src/index.ts`
-- [ ] T004 Pass `currentPage: Boolean(opts.currentPage)` from the action handler into `downloadCommand` in `packages/cli/src/index.ts`
+- [x] T001 Add `currentPage?: boolean` to `DownloadCommandOptions` interface in `packages/cli/src/commands/download.ts`
+- [x] T002 [P] Add `currentPage?: boolean` to `DownloadCliOptions` interface in `packages/cli/src/index.ts`
+- [x] T003 Register `.option("--current-page", "Scrape only the target page without any crawling")` on the download command in `packages/cli/src/index.ts`
+- [x] T004 Pass `currentPage: Boolean(opts.currentPage)` from the action handler into `downloadCommand` in `packages/cli/src/index.ts`
 
 **Checkpoint**: Flag is wired end-to-end. `pluckmd download --help` shows `--current-page`.
 
@@ -35,10 +35,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] Add `--current-page` branch in `downloadCommand`: if `options.currentPage`, acquire the listing page then call `downloadSingleArticle` directly, skipping `runGenericDownload` entirely — in `packages/cli/src/commands/download.ts`
-- [ ] T006 [US1] Add warning logic in the download action handler in `packages/cli/src/index.ts`: for each of `--limit`, `--pagination-timeout`, `--refresh-adapter`, if `cmd.getOptionValueSource(key) === "cli"`, emit `warning: --<flag> has no effect with --current-page` to `process.stderr`, then proceed
-- [ ] T007 [P] [US1] Add smoke test asserting `--current-page` appears in `pluckmd download --help` output in `packages/cli/tests/cli-smoke.test.ts`
-- [ ] T008 [P] [US1] Add smoke test asserting that running `download --current-page --limit 5 https://example.com` emits a `warning: --limit has no effect with --current-page` line on stderr (use a mock/stub or run against a local fixture that returns immediately) in `packages/cli/tests/cli-smoke.test.ts`
+- [x] T005 [US1] Add `--current-page` branch in `downloadCommand`: if `options.currentPage`, acquire the listing page then call `downloadSingleArticle` directly, skipping `runGenericDownload` entirely — in `packages/cli/src/commands/download.ts`
+- [x] T006 [US1] Add warning logic in the download action handler in `packages/cli/src/index.ts`: for each of `--limit`, `--pagination-timeout`, `--refresh-adapter`, if `cmd.getOptionValueSource(key) === "cli"`, emit `warning: --<flag> has no effect with --current-page` to `process.stderr`, then proceed
+- [x] T007 [P] [US1] Add smoke test asserting `--current-page` appears in `pluckmd download --help` output in `packages/cli/tests/cli-smoke.test.ts`
+- [x] T008 [P] [US1] Add smoke test asserting that running `download --current-page --limit 5 https://example.com` emits a `warning: --limit has no effect with --current-page` line on stderr (use a mock/stub or run against a local fixture that returns immediately) in `packages/cli/tests/cli-smoke.test.ts`
 
 **Checkpoint**: User Story 1 fully functional. `--current-page <url>` produces one Markdown file with no crawling overhead.
 
@@ -54,8 +54,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] Add a code comment in `downloadCommand` in `packages/cli/src/commands/download.ts` (adjacent to the `--current-page` branch from T005) noting that this path handles both URL and `--active-tab` sources through the `DownloadSource` abstraction
-- [ ] T010 [P] [US2] Update the `--active-tab` option description in `packages/cli/src/index.ts` to mention it is compatible with `--current-page`
+- [x] T009 [US2] Add a code comment in `downloadCommand` in `packages/cli/src/commands/download.ts` (adjacent to the `--current-page` branch from T005) noting that this path handles both URL and `--active-tab` sources through the `DownloadSource` abstraction
+- [x] T010 [P] [US2] Update the `--active-tab` option description in `packages/cli/src/index.ts` to mention it is compatible with `--current-page`
 
 **Checkpoint**: Both user stories complete. The `DownloadSource` abstraction covers both URL and extension-bridge paths transparently.
 
@@ -63,8 +63,8 @@
 
 ## Phase 4: Polish & Cross-Cutting Concerns
 
-- [ ] T011 [P] Run `npm run test` from the repo root and confirm all existing tests pass with no regressions
-- [ ] T012 [P] Run `npm run lint` from the repo root and confirm no lint errors in modified files
+- [x] T011 [P] Run `npm run test` from the repo root and confirm all existing tests pass with no regressions
+- [x] T012 [P] Run `npm run lint` from the repo root and confirm no lint errors in modified files
 
 ---
 

@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(bash .specify/scripts/bash/check-prerequisites.sh --json --paths-only)",
-      "Bash(bash *)"
+      "Bash(bash *)",
+      "Bash(python3 *)",
+      "Bash(npx vitest *)"
     ]
   }
 }

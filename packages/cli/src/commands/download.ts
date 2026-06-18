@@ -32,6 +32,7 @@ export interface DownloadCommandOptions {
   render?: RenderMode;
   refreshAdapter?: boolean;
   activeTab?: boolean;
+  currentPage?: boolean;
 }
 
 type ArticleAcquirer = (url: string) => Promise<PageAnalysisInput>;
@@ -52,8 +53,22 @@ export async function downloadCommand(
   const reporter = new ConsoleDownloadReporter();
 
   try {
-    const result = await runGenericDownload(source, options, reporter);
-    reporter.finished(result);
+    if (options.currentPage) {
+      reporter.sourceSelected(source.label);
+      const listing = await source.acquireListing();
+      reporter.listingAcquired(source.listingDescription, listing);
+      const extractor = new ReadabilityArticleExtractor();
+      const result = await downloadSingleArticle(
+        listing,
+        options,
+        extractor,
+        reporter,
+      );
+      reporter.finished(result);
+    } else {
+      const result = await runGenericDownload(source, options, reporter);
+      reporter.finished(result);
+    }
   } finally {
     await source.close();
   }
@@ -69,14 +84,17 @@ function createDownloadSource(
       label: "generic active tab",
       listingDescription: "Active tab",
       acquireListing: () => extensionFetcher.acquireActiveTab(),
-      acquireArticle: (articleUrl) => acquireArticleThroughExtension(extensionFetcher, articleUrl),
+      acquireArticle: (articleUrl) =>
+        acquireArticleThroughExtension(extensionFetcher, articleUrl),
       close: () => extensionFetcher.close(),
     };
   }
 
   if (!url) throw new Error("URL is required unless --active-tab is set");
 
-  const acquirer = new RenderingPageAcquirer({ render: options.render ?? "auto" });
+  const acquirer = new RenderingPageAcquirer({
+    render: options.render ?? "auto",
+  });
   return {
     label: "generic",
     acquireListing: () => acquirer.acquire(url),
@@ -105,7 +123,10 @@ async function runGenericDownload(
   } catch (resolveError) {
     // The URL did not look like a listing (no repeated article-link clusters).
     // Fall back to treating the fetched page itself as a single article.
-    const message = resolveError instanceof Error ? resolveError.message : String(resolveError);
+    const message =
+      resolveError instanceof Error
+        ? resolveError.message
+        : String(resolveError);
     reporter.singleArticleFallback?.(message);
     return downloadSingleArticle(listing, options, extractor, reporter);
   }
@@ -113,22 +134,20 @@ async function runGenericDownload(
 
   const collected = await new GenericLinkCollector({
     maxElapsedMs: options.paginationTimeoutMs,
-  }).collectLinks(
-    listing,
-    resolved.spec,
-    options.limit,
-  );
+  }).collectLinks(listing, resolved.spec, options.limit);
   reporter.articlesCollected(collected.links.length, collected.stoppedBecause);
 
   const tasks = collected.links.map((articleRef, index) =>
-    concurrencyLimit(() => downloadArticleSafely({
-      articleRef,
-      index,
-      options,
-      source,
-      extractor,
-      adapterSpec: resolved.spec,
-    })),
+    concurrencyLimit(() =>
+      downloadArticleSafely({
+        articleRef,
+        index,
+        options,
+        source,
+        extractor,
+        adapterSpec: resolved.spec,
+      }),
+    ),
   );
 
   const outcomes = await Promise.all(tasks);
@@ -152,11 +171,14 @@ async function downloadSingleArticle(
 
   reporter.articlesCollected(1, "complete");
   try {
-    const parsed = await extractor.extractArticle({
-      url: articleRef.url,
-      finalUrl: page.finalUrl,
-      html: page.html,
-    }, singleArticleSpec);
+    const parsed = await extractor.extractArticle(
+      {
+        url: articleRef.url,
+        finalUrl: page.finalUrl,
+        html: page.html,
+      },
+      singleArticleSpec,
+    );
     const { markdown } = convertHtmlToMarkdown(parsed.bodyHtml, articleRef.url);
     await writeArticle(options.output, parsed.metadata, markdown);
     const outcome: ArticleDownloadOutcome = { status: "saved", articleRef };
@@ -164,7 +186,11 @@ async function downloadSingleArticle(
     return summarizeDownload([outcome]);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const outcome: ArticleDownloadOutcome = { status: "failed", articleRef, error: message };
+    const outcome: ArticleDownloadOutcome = {
+      status: "failed",
+      articleRef,
+      error: message,
+    };
     reportArticleOutcomes([outcome], reporter);
     return summarizeDownload([outcome]);
   }
@@ -193,20 +219,23 @@ async function downloadArticleSafely(args: {
   extractor: ReadabilityArticleExtractor;
   adapterSpec: AdapterSpec;
 }): Promise<ArticleDownloadOutcome> {
-  const {
-    articleRef,
-    index,
-    options,
-    source,
-    extractor,
-    adapterSpec,
-  } = args;
+  const { articleRef, index, options, source, extractor, adapterSpec } = args;
 
   try {
-    await downloadOneArticle(articleRef, index, options, source.acquireArticle, extractor, adapterSpec);
+    await downloadOneArticle(
+      articleRef,
+      index,
+      options,
+      source.acquireArticle,
+      extractor,
+      adapterSpec,
+    );
     return { status: "saved", articleRef };
   } catch (downloadError) {
-    const message = downloadError instanceof Error ? downloadError.message : String(downloadError);
+    const message =
+      downloadError instanceof Error
+        ? downloadError.message
+        : String(downloadError);
     return { status: "failed", articleRef, error: message };
   }
 }
@@ -218,10 +247,19 @@ function reportArticleOutcomes(
   outcomes.forEach((outcome, index) => {
     const completed = index + 1;
     if (outcome.status === "saved") {
-      reporter.articleSaved(completed, outcomes.length, outcome.articleRef.titleHint ?? outcome.articleRef.url);
+      reporter.articleSaved(
+        completed,
+        outcomes.length,
+        outcome.articleRef.titleHint ?? outcome.articleRef.url,
+      );
       return;
     }
-    reporter.articleFailed(completed, outcomes.length, outcome.articleRef.url, outcome.error);
+    reporter.articleFailed(
+      completed,
+      outcomes.length,
+      outcome.articleRef.url,
+      outcome.error,
+    );
   });
 }
 
@@ -236,17 +274,23 @@ async function downloadOneArticle(
   await applyPerArticleDelay(index, options.delay);
 
   const page = await acquireArticle(articleRef.url);
-  const parsed = await extractor.extractArticle({
-    url: articleRef.url,
-    finalUrl: page.finalUrl,
-    html: page.html,
-    metadataHints: { title: articleRef.titleHint },
-  }, adapterSpec);
+  const parsed = await extractor.extractArticle(
+    {
+      url: articleRef.url,
+      finalUrl: page.finalUrl,
+      html: page.html,
+      metadataHints: { title: articleRef.titleHint },
+    },
+    adapterSpec,
+  );
   const { markdown } = convertHtmlToMarkdown(parsed.bodyHtml, articleRef.url);
   await writeArticle(options.output, parsed.metadata, markdown);
 }
 
-async function applyPerArticleDelay(index: number, delayMilliseconds: number): Promise<void> {
+async function applyPerArticleDelay(
+  index: number,
+  delayMilliseconds: number,
+): Promise<void> {
   if (delayMilliseconds > 0 && index > 0) {
     await sleep(delayMilliseconds);
   }

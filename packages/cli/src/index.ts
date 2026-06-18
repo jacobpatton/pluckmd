@@ -19,9 +19,24 @@ program
   .command("download [url]")
   .description("Download articles from a blog/magazine URL")
   .option("-o, --output <dir>", "Output directory", "./articles")
-  .option("-c, --concurrency <n>", "Parallel downloads", parsePositiveInteger, 2)
-  .option("--delay <ms>", "Delay between requests (ms)", parseNonNegativeInteger, 500)
-  .option("--limit <n>", "Max articles to download", parsePositiveInteger, DEFAULT_DOWNLOAD_LIMIT)
+  .option(
+    "-c, --concurrency <n>",
+    "Parallel downloads",
+    parsePositiveInteger,
+    2,
+  )
+  .option(
+    "--delay <ms>",
+    "Delay between requests (ms)",
+    parseNonNegativeInteger,
+    500,
+  )
+  .option(
+    "--limit <n>",
+    "Max articles to download",
+    parsePositiveInteger,
+    DEFAULT_DOWNLOAD_LIMIT,
+  )
   .option(
     "--pagination-timeout <ms>",
     "Max time to spend collecting paginated listing links (ms)",
@@ -29,10 +44,36 @@ program
     DEFAULT_PAGINATION_TIMEOUT_MS,
   )
   .option("--no-llm", "Disable LLM fallback for generic extraction")
-  .option("--render <mode>", "Generic extraction render mode: auto, never, always", parseRenderMode, "auto")
+  .option(
+    "--render <mode>",
+    "Generic extraction render mode: auto, never, always",
+    parseRenderMode,
+    "auto",
+  )
   .option("--refresh-adapter", "Bypass cached generic adapter specs")
-  .option("--active-tab", "Use the current Chrome tab through the pluckmd extension as the listing page")
-  .action(async (url: string, opts: DownloadCliOptions) => {
+  .option(
+    "--active-tab",
+    "Use the current Chrome tab through the pluckmd extension as the listing page (compatible with --current-page)",
+  )
+  .option(
+    "--current-page",
+    "Scrape only the target page without any crawling, pagination, or adapter resolution",
+  )
+  .action(async (url: string, opts: DownloadCliOptions, cmd: Command) => {
+    if (opts.currentPage) {
+      const crawlingFlags: Array<[string, string]> = [
+        ["limit", "--limit"],
+        ["paginationTimeout", "--pagination-timeout"],
+        ["refreshAdapter", "--refresh-adapter"],
+      ];
+      for (const [key, flag] of crawlingFlags) {
+        if (cmd.getOptionValueSource(key) === "cli") {
+          process.stderr.write(
+            `warning: ${flag} has no effect with --current-page\n`,
+          );
+        }
+      }
+    }
     await downloadCommand(url, {
       output: opts.output,
       concurrency: opts.concurrency,
@@ -43,6 +84,7 @@ program
       render: opts.render,
       refreshAdapter: Boolean(opts.refreshAdapter),
       activeTab: Boolean(opts.activeTab),
+      currentPage: Boolean(opts.currentPage),
     });
   });
 
@@ -51,11 +93,25 @@ program
   .description("Inspect generic adapter resolution for a listing URL")
   .option("--explain", "Show resolution details", true)
   .option("--no-llm", "Disable LLM fallback")
-  .option("--render <mode>", "Render mode: auto, never, always", parseRenderMode, "auto")
+  .option(
+    "--render <mode>",
+    "Render mode: auto, never, always",
+    parseRenderMode,
+    "auto",
+  )
   .option("--refresh-adapter", "Bypass cached adapter specs")
-  .option("--active-tab", "Inspect the current Chrome tab through the pluckmd extension")
-  .option("--agent-request [file]", "Write an agent-readable adapter request when LLM configuration is missing")
-  .option("--adapter-spec <file>", "Validate and cache an agent-written AdapterSpec JSON file")
+  .option(
+    "--active-tab",
+    "Inspect the current Chrome tab through the pluckmd extension",
+  )
+  .option(
+    "--agent-request [file]",
+    "Write an agent-readable adapter request when LLM configuration is missing",
+  )
+  .option(
+    "--adapter-spec <file>",
+    "Validate and cache an agent-written AdapterSpec JSON file",
+  )
   .action(async (url: string, opts: InspectCliOptions) => {
     await inspectCommand(url, {
       explain: Boolean(opts.explain),
@@ -78,11 +134,7 @@ program
 program
   .command("setup")
   .description("Install AI agent skills (Claude Code, Codex, Cursor, etc.)")
-  .option(
-    "--agent <type>",
-    "Agent type: claude-code, agents, all",
-    "all",
-  )
+  .option("--agent <type>", "Agent type: claude-code, agents, all", "all")
   .option("--target <dir>", "Target directory for AGENTS.md", ".")
   .action(async (opts: Record<string, string>) => {
     await setupCommand({
@@ -96,7 +148,10 @@ try {
 } catch (error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
 
-  if (message.includes("playwright") || message.includes("Executable doesn't exist")) {
+  if (
+    message.includes("playwright") ||
+    message.includes("Executable doesn't exist")
+  ) {
     console.error("\n❌ Playwright is not installed or Chromium is missing.");
     console.error("   Run: npx playwright install chromium\n");
   } else {
@@ -115,6 +170,7 @@ interface DownloadCliOptions {
   render: "auto" | "never" | "always";
   refreshAdapter?: boolean;
   activeTab?: boolean;
+  currentPage?: boolean;
 }
 
 interface InspectCliOptions {
@@ -145,5 +201,7 @@ function parseNonNegativeInteger(value: string): number {
 
 function parseRenderMode(value: string): "auto" | "never" | "always" {
   if (value === "auto" || value === "never" || value === "always") return value;
-  throw new InvalidArgumentError("render mode must be one of: auto, never, always");
+  throw new InvalidArgumentError(
+    "render mode must be one of: auto, never, always",
+  );
 }
